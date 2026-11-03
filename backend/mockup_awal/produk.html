@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Produk - FishShop</title>
+
+    <link rel="stylesheet" href="./style.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="container nav-content">
+
+        <a href="index.html" class="logo">
+            🐟 <span>Fish</span>Shop
+        </a>
+
+
+        <nav id="mainNav">
+
+            <a href="index.html">
+                Home
+            </a>
+
+            <a href="produk.html" class="active">
+                Produk
+            </a>
+
+            <a href="tentang.html">
+                Tentang
+            </a>
+
+            <a href="keranjang.html">
+                🛒 Keranjang
+                <span id="cartCount">0</span>
+            </a>
+
+        </nav>
+
+
+        <button
+            class="menu-btn"
+            onclick="toggleMenu()">
+
+            ☰
+
+        </button>
+
+    </div>
+
+</header>
+
+
+<section class="page-header">
+
+    <div class="container">
+
+        <div class="section-label">
+            FIS HSHOP
+        </div>
+
+        <h1>
+            Produk Kami
+        </h1>
+
+        <p>
+            Temukan ikan favoritmu di FishShop.
+        </p>
+
+    </div>
+
+</section>
+
+
+<section class="section">
+
+    <div class="container">
+
+
+        <div class="filter-box">
+
+            <div class="search-box">
+
+                🔍
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Cari ikan...">
+
+            </div>
+
+
+            <select id="categoryFilter">
+
+                <option value="Semua">
+                    Semua Kategori
+                </option>
+
+                <option value="Ikan Hias">
+                    Ikan Hias
+                </option>
+
+                <option value="Air Tawar">
+                    Air Tawar
+                </option>
+
+                <option value="Ikan Predator">
+                    Ikan Predator
+                </option>
+
+                <option value="Udang">
+                    Udang
+                </option>
+
+            </select>
+
+
+            <select id="sortFilter">
+
+                <option value="default">
+                    Urutkan
+                </option>
+
+                <option value="low">
+                    Harga Terendah
+                </option>
+
+                <option value="high">
+                    Harga Tertinggi
+                </option>
+
+                <option value="name">
+                    Nama A-Z
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div
+            id="productList"
+            class="product-grid">
+        </div>
+
+
+        <div
+            id="emptyProduct"
+            class="empty-state"
+            style="display:none;">
+
+            <div class="empty-icon">
+                🔍
+            </div>
+
+            <h2>
+                Produk tidak ditemukan
+            </h2>
+
+            <p>
+                Coba gunakan kata kunci lain.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<footer>
+
+    <div class="container footer-content">
+
+        <div>
+
+            <h2>🐟 FishShop</h2>
+
+            <p>
+                Toko ikan online terpercaya.
+            </p>
+
+        </div>
+
+
+        <div>
+
+            <h3>Menu</h3>
+
+            <a href="index.html">Home</a>
+            <a href="produk.html">Produk</a>
+            <a href="tentang.html">Tentang</a>
+
+        </div>
+
+
+        <div>
+
+            <h3>Kontak</h3>
+
+            <p>📱 0812-3456-7890</p>
+            <p>📍 Pamekasan, Madura</p>
+
+        </div>
+
+    </div>
+
+
+    <div class="copyright">
+        © 2026 FishShop
+    </div>
+
+</footer>
+
+
+<script src="./products.js"></script>
+<script src="./script.js"></script>
+
+
+<script>
+
+const productList =
+    document.getElementById("productList");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const categoryFilter =
+    document.getElementById("categoryFilter");
+
+const sortFilter =
+    document.getElementById("sortFilter");
+
+const emptyProduct =
+    document.getElementById("emptyProduct");
+
+
+// Tampilkan produk
+function displayProducts() {
+
+    let data = [...products];
+
+
+    const search =
+        searchInput.value
+            .toLowerCase()
+            .trim();
+
+
+    const category =
+        categoryFilter.value;
+
+
+    const sort =
+        sortFilter.value;
+
+
+    data = data.filter(product => {
+
+        const matchSearch =
+            product.name
+                .toLowerCase()
+                .includes(search);
+
+
+        const matchCategory =
+            category === "Semua" ||
+            product.category === category;
+
+
+        return matchSearch &&
+               matchCategory;
+
+    });
+
+
+    if (sort === "low") {
+
+        data.sort(
+            (a, b) => a.price - b.price
+        );
+
+    }
+
+
+    if (sort === "high") {
+
+        data.sort(
+            (a, b) => b.price - a.price
+        );
+
+    }
+
+
+    if (sort === "name") {
+
+        data.sort(
+            (a, b) =>
+                a.name.localeCompare(b.name)
+        );
+
+    }
+
+
+    productList.innerHTML =
+        data.map(productCard).join("");
+
+
+    if (data.length === 0) {
+
+        emptyProduct.style.display =
+            "block";
+
+    } else {
+
+        emptyProduct.style.display =
+            "none";
+
+    }
+
+}
+
+
+// Event search
+searchInput.addEventListener(
+    "input",
+    displayProducts
+);
+
+
+// Event kategori
+categoryFilter.addEventListener(
+    "change",
+    displayProducts
+);
+
+
+// Event sorting
+sortFilter.addEventListener(
+    "change",
+    displayProducts
+);
+
+
+// Ambil kategori dari URL
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
+
+
+const kategori =
+    params.get("kategori");
+
+
+if (kategori) {
+
+    categoryFilter.value =
+        kategori;
+
+}
+
+
+displayProducts();
+
+</script>
+
+</body>
+</html>

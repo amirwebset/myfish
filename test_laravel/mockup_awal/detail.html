@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Detail Produk - FishShop</title>
+
+    <link rel="stylesheet" href="./style.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="container nav-content">
+
+        <a href="index.html" class="logo">
+            🐟 <span>Fish</span>Shop
+        </a>
+
+
+        <nav id="mainNav">
+
+            <a href="index.html">Home</a>
+
+            <a href="produk.html" class="active">
+                Produk
+            </a>
+
+            <a href="tentang.html">
+                Tentang
+            </a>
+
+            <a href="keranjang.html">
+                🛒 Keranjang
+                <span id="cartCount">0</span>
+            </a>
+
+        </nav>
+
+
+        <button
+            class="menu-btn"
+            onclick="toggleMenu()">
+
+            ☰
+
+        </button>
+
+    </div>
+
+</header>
+
+
+<section class="section detail-section">
+
+    <div class="container">
+
+        <div id="detailProduct"></div>
+
+    </div>
+
+</section>
+
+
+<footer>
+
+    <div class="copyright">
+        © 2026 FishShop. All Rights Reserved.
+    </div>
+
+</footer>
+
+
+<script src="./products.js"></script>
+<script src="./script.js"></script>
+<script src="./detail.js"></script>
+
+</body>
+</html>

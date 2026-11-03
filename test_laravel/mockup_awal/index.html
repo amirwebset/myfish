@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FishShop - Toko Ikan Online</title>
+
+    <link rel="stylesheet" href="./style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<header class="navbar">
+    <div class="container nav-content">
+
+        <a href="index.html" class="logo">
+            🐟 <span>Fish</span>Shop
+        </a>
+
+        <nav id="mainNav">
+            <a href="index.html" class="active">Home</a>
+            <a href="produk.html">Produk</a>
+            <a href="tentang.html">Tentang</a>
+
+            <a href="keranjang.html" class="cart-link">
+                🛒 Keranjang
+                <span id="cartCount">0</span>
+            </a>
+        </nav>
+
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+
+    </div>
+</header>
+
+
+<!-- HERO -->
+<section class="hero">
+
+    <div class="container hero-content">
+
+        <div class="hero-text">
+
+            <div class="hero-label">
+                🐠 TOKO IKAN ONLINE TERPERCAYA
+            </div>
+
+            <h1>
+                Temukan Ikan
+                <span>Favoritmu</span>
+            </h1>
+
+            <p>
+                Berbagai jenis ikan hias berkualitas dengan
+                harga terjangkau. Belanja ikan favoritmu
+                dengan mudah dari rumah.
+            </p>
+
+            <div class="hero-buttons">
+
+                <a href="produk.html" class="btn btn-primary">
+                    Belanja Sekarang →
+                </a>
+
+                <a href="tentang.html" class="btn btn-outline">
+                    Tentang Kami
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="hero-visual">
+
+            <div class="bubble bubble-1">●</div>
+            <div class="bubble bubble-2">●</div>
+            <div class="bubble bubble-3">●</div>
+
+            <div class="fish-display">
+                🐠
+            </div>
+
+            <div class="fish-small fish-small-1">
+                🐟
+            </div>
+
+            <div class="fish-small fish-small-2">
+                🐡
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- CATEGORY -->
+<section class="section">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div class="section-label">
+                KATEGORI
+            </div>
+
+            <h2>
+                Pilih Jenis Ikan
+            </h2>
+
+            <p>
+                Temukan berbagai jenis ikan sesuai kebutuhanmu.
+            </p>
+
+        </div>
+
+
+        <div class="category-grid">
+
+            <a href="produk.html?kategori=Ikan Hias"
+               class="category-card">
+
+                <div class="category-icon">
+                    🐠
+                </div>
+
+                <h3>Ikan Hias</h3>
+
+                <p>
+                    Ikan cantik untuk aquarium
+                </p>
+
+            </a>
+
+
+            <a href="produk.html?kategori=Air Tawar"
+               class="category-card">
+
+                <div class="category-icon">
+                    🐟
+                </div>
+
+                <h3>Air Tawar</h3>
+
+                <p>
+                    Ikan air tawar pilihan
+                </p>
+
+            </a>
+
+
+            <a href="produk.html?kategori=Ikan Predator"
+               class="category-card">
+
+                <div class="category-icon">
+                    🦈
+                </div>
+
+                <h3>Predator</h3>
+
+                <p>
+                    Ikan predator berkualitas
+                </p>
+
+            </a>
+
+
+            <a href="produk.html?kategori=Udang"
+               class="category-card">
+
+                <div class="category-icon">
+                    🦐
+                </div>
+
+                <h3>Udang</h3>
+
+                <p>
+                    Udang hias aquarium
+                </p>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- PRODUK UNGGULAN -->
+<section class="section products-section">
+
+    <div class="container">
+
+        <div class="section-heading">
+
+            <div class="section-label">
+                PRODUK PILIHAN
+            </div>
+
+            <h2>
+                Ikan Favorit
+            </h2>
+
+            <p>
+                Beberapa produk yang paling banyak diminati.
+            </p>
+
+        </div>
+
+
+        <div id="featuredProducts" class="product-grid"></div>
+
+
+        <div class="center">
+
+            <a href="produk.html" class="btn btn-primary">
+                Lihat Semua Produk →
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- KEUNGGULAN -->
+<section class="advantages">
+
+    <div class="container">
+
+        <div class="advantage-grid">
+
+            <div class="advantage">
+
+                <div class="advantage-icon">
+                    🐟
+                </div>
+
+                <div>
+                    <h3>Ikan Berkualitas</h3>
+
+                    <p>
+                        Produk dipilih dengan kualitas terbaik.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="advantage">
+
+                <div class="advantage-icon">
+                    💰
+                </div>
+
+                <div>
+                    <h3>Harga Terjangkau</h3>
+
+                    <p>
+                        Harga bersahabat untuk semua.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="advantage">
+
+                <div class="advantage-icon">
+                    📦
+                </div>
+
+                <div>
+                    <h3>Pengemasan Aman</h3>
+
+                    <p>
+                        Pesanan dikemas dengan aman.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FOOTER -->
+<footer>
+
+    <div class="container footer-content">
+
+        <div class="footer-brand">
+
+            <h2>
+                🐟 FishShop
+            </h2>
+
+            <p>
+                Toko ikan online untuk kebutuhan ikan hias
+                dan aquarium kamu.
+            </p>
+
+        </div>
+
+
+        <div>
+
+            <h3>Menu</h3>
+
+            <a href="index.html">Home</a>
+            <a href="produk.html">Produk</a>
+            <a href="tentang.html">Tentang</a>
+            <a href="keranjang.html">Keranjang</a>
+
+        </div>
+
+
+        <div>
+
+            <h3>Kontak</h3>
+
+            <p>📱 0812-3456-7890</p>
+            <p>📍 Pamekasan, Madura</p>
+            <p>✉️ fishshop@gmail.com</p>
+
+        </div>
+
+    </div>
+
+
+    <div class="copyright">
+        © 2026 FishShop. All Rights Reserved.
+    </div>
+
+</footer>
+
+
+<script src="./products.js"></script>
+<script src="./script.js"></script>
+
+</body>
+</html>
