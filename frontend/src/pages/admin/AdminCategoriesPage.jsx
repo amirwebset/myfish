@@ -31,6 +31,7 @@ export default function AdminCategoriesPage() {
   };
 
   useEffect(() => {
+    document.title = 'IKANKU Admin | Kelola Kategori Ikan';
     fetchCategories();
   }, []);
 

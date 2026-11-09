@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\OrderService;
 
 class OrderController extends Controller
 {
@@ -17,12 +18,17 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
+        // 0. Auto-cancel expired unpaid orders
+        OrderService::cancelExpiredOrders();
+
         $orders = Order::where('user_id', $user->id)
             ->with(['items.product', 'payment'])
             ->latest()
             ->get();
 
         $formatted = $orders->map(function ($order) {
+            $logistics = OrderService::parseLogistics($order->notes);
+
             return [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
@@ -33,6 +39,7 @@ class OrderController extends Controller
                 'status_badge' => $order->status_badge_class,
                 'recipient_name' => $order->recipient_name,
                 'items_count' => $order->items->sum('quantity'),
+                'courier' => $logistics['courier'],
                 'created_at' => $order->created_at->format('d M Y H:i'),
                 'payment' => $order->payment ? [
                     'status' => $order->payment->status,
@@ -49,16 +56,21 @@ class OrderController extends Controller
     }
 
     /**
-     * Get single order detail by order_number.
+     * Get single order detail by order_number with full logistics breakdown.
      */
     public function show(Request $request, $orderNumber)
     {
         $user = $request->user();
 
+        // 0. Auto-cancel expired unpaid orders
+        OrderService::cancelExpiredOrders();
+
         $order = Order::where('order_number', $orderNumber)
             ->where('user_id', $user->id)
             ->with(['items.product', 'payment'])
             ->firstOrFail();
+
+        $logistics = OrderService::parseLogistics($order->notes);
 
         $items = $order->items->map(function ($item) {
             return [
@@ -74,6 +86,12 @@ class OrderController extends Controller
             ];
         });
 
+        $fishSubtotal = $items->sum('subtotal');
+
+        // Bersihkan catatan agar tag teknis tidak merusak tampilan catatan pengguna
+        $cleanNotes = preg_replace('/\[Logistik:[^\]]+\]/', '', $order->notes);
+        $cleanNotes = trim(str_replace('|', '', $cleanNotes));
+
         return response()->json([
             'success' => true,
             'order' => [
@@ -82,7 +100,7 @@ class OrderController extends Controller
                 'recipient_name' => $order->recipient_name,
                 'phone' => $order->phone,
                 'address' => $order->address,
-                'notes' => $order->notes,
+                'notes' => $cleanNotes,
                 'total_amount' => (float) $order->total_amount,
                 'formatted_total' => $order->formatted_total,
                 'status' => $order->status,
@@ -90,6 +108,16 @@ class OrderController extends Controller
                 'payment_method' => $order->payment_method,
                 'tracking_number' => $order->tracking_number,
                 'created_at' => $order->created_at->format('d M Y H:i'),
+                // Breakdown Biaya
+                'fish_subtotal' => (float) $fishSubtotal,
+                'formatted_fish_subtotal' => 'Rp ' . number_format($fishSubtotal, 0, ',', '.'),
+                'shipping_courier' => $logistics['courier'],
+                'shipping_cost' => (float) $logistics['shipping_cost'],
+                'formatted_shipping_cost' => 'Rp ' . number_format($logistics['shipping_cost'], 0, ',', '.'),
+                'packing_type' => $logistics['packing_type'],
+                'packing_cost' => (float) $logistics['packing_cost'],
+                'formatted_packing_cost' => 'Rp ' . number_format($logistics['packing_cost'], 0, ',', '.'),
+                'unique_code' => (int) $logistics['unique_code'],
                 'items' => $items,
                 'payment' => $order->payment ? [
                     'id' => $order->payment->id,
@@ -127,6 +155,7 @@ class OrderController extends Controller
 
         DB::transaction(function () use ($order) {
             $order->status = 'dibatalkan';
+            $order->notes = ($order->notes ? $order->notes . ' | ' : '') . 'Dibatalkan oleh pelanggan.';
             $order->save();
 
             // Restore stock
@@ -139,7 +168,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Pesanan berhasil dibatalkan dan stok telah dikembalikan.',
+            'message' => 'Pesanan berhasil dibatalkan dan kuota stok ikan telah dikembalikan.',
         ]);
     }
 }

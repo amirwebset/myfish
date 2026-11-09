@@ -6,6 +6,7 @@ import { CartProvider, useCart } from './context/CartContext';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import NotificationToast from './components/common/NotificationToast';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
@@ -41,21 +42,21 @@ function AppContent() {
       {/* Main Page Content */}
       <main className="flex-1 flex flex-col">
         <Routes>
-          {/* Public Customer Routes */}
+          {/* Customer Routes (Protected & Public) */}
           <Route path="/" element={<HomePage />} />
           <Route path="/katalog" element={<CatalogPage />} />
           <Route path="/katalog/:identifier" element={<ProductDetailPage />} />
           <Route path="/keranjang" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/pesanan/:orderNumber" element={<OrderDetailPage />} />
+          <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+          <Route path="/pesanan/:orderNumber" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profil" element={<ProfilePage />} />
+          <Route path="/profil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/tentang" element={<AboutPage />} />
           <Route path="/kontak" element={<ContactPage />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          {/* Admin Routes (Guarded by ProtectedRoute adminOnly) */}
+          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="produk" element={<AdminProductsPage />} />
             <Route path="kategori" element={<AdminCategoriesPage />} />

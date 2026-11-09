@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import ProductCard from '../components/product/ProductCard';
+import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../data/mockProducts';
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -23,20 +24,27 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = 'IKANKU | Sentra Budidaya Ikan Hias Desa Pasanggar';
     const fetchData = async () => {
       try {
         const [featRes, catRes] = await Promise.all([
           api.get('/products/featured'),
           api.get('/categories')
         ]);
-        if (featRes.data.success) {
+        if (featRes.data?.success && Array.isArray(featRes.data.data) && featRes.data.data.length > 0) {
           setFeaturedProducts(featRes.data.data);
+        } else {
+          setFeaturedProducts(MOCK_PRODUCTS.filter(p => p.is_featured));
         }
-        if (catRes.data.success) {
+        if (catRes.data?.success && Array.isArray(catRes.data.data) && catRes.data.data.length > 0) {
           setCategories(catRes.data.data);
+        } else {
+          setCategories(MOCK_CATEGORIES);
         }
       } catch (err) {
-        console.warn('Failed to load home data:', err.message);
+        console.warn('Backend unavailable, using Pasanggar featured catalog:', err.message);
+        setFeaturedProducts(MOCK_PRODUCTS.filter(p => p.is_featured));
+        setCategories(MOCK_CATEGORIES);
       } finally {
         setLoading(false);
       }
@@ -120,6 +128,10 @@ export default function HomePage() {
                     src="https://images.unsplash.com/photo-1520302630591-fd1c66edc19d?auto=format&fit=crop&w=800&q=80"
                     alt="Ikan Koi Pasanggar"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/default-fish.svg';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
                   
@@ -417,6 +429,10 @@ export default function HomePage() {
                 src="https://images.unsplash.com/photo-1544943910-4c1dc44a046c?auto=format&fit=crop&w=1000&q=80"
                 alt="Budidaya Ikan Hias"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/images/default-fish.svg';
+                }}
               />
             </div>
 

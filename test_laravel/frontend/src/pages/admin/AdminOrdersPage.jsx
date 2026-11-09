@@ -11,12 +11,15 @@ import {
   FileText
 } from 'lucide-react';
 import api from '../../services/api';
+import Pagination from '../../components/common/Pagination';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
 
   // Detail & Status Edit Modal
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -26,16 +29,23 @@ export default function AdminOrdersPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const fetchOrders = async () => {
+  useEffect(() => {
+    document.title = 'IKANKU Admin | Kelola Pesanan Pelanggan';
+  }, []);
+
+  const fetchOrders = async (targetPage = page) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: targetPage };
       if (statusFilter !== 'all') params.status = statusFilter;
       if (search) params.search = search;
 
       const res = await api.get('/admin/orders', { params });
       if (res.data.success) {
         setOrders(res.data.data);
+        if (res.data.meta) {
+          setMeta(res.data.meta);
+        }
       }
     } catch (err) {
       console.warn('Failed to load admin orders:', err.message);
@@ -45,8 +55,14 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    setPage(1);
+    fetchOrders(1);
   }, [statusFilter, search]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchOrders(newPage);
+  };
 
   const handleOpenDetail = async (orderId) => {
     try {
@@ -204,6 +220,17 @@ export default function AdminOrdersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination */}
+        <div className="border-t border-slate-100 px-4">
+          <Pagination
+            currentPage={meta.current_page}
+            lastPage={meta.last_page}
+            total={meta.total}
+            perPage={20}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
 
       {/* Modal Detail & Update Status */}
@@ -255,9 +282,15 @@ export default function AdminOrdersPage() {
                   {selectedOrder.items.map((it) => (
                     <div key={it.id} className="p-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        {it.image_url && (
-                          <img src={it.image_url} alt="" className="w-9 h-9 rounded-lg object-cover bg-slate-100" />
-                        )}
+                        <img
+                          src={it.image_url || '/images/default-fish.svg'}
+                          alt={it.product_name || 'Ikan'}
+                          className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/default-fish.svg';
+                          }}
+                        />
                         <div>
                           <p className="font-bold text-slate-800">{it.product_name}</p>
                           <p className="text-slate-400 text-[11px]">{it.quantity} ekor x {it.formatted_price}</p>

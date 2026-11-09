@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Fish, Mail, Lock, ArrowRight, AlertCircle, Shield, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    document.title = 'IKANKU | Masuk Akun';
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

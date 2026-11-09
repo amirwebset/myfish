@@ -58,11 +58,21 @@ class Payment extends Model
      */
     public function getProofImageUrlAttribute(): string
     {
+        if (empty($this->proof_image)) {
+            return '';
+        }
+
         if (str_starts_with($this->proof_image, 'http://') || str_starts_with($this->proof_image, 'https://')) {
             return $this->proof_image;
         }
 
-        return asset('storage/' . $this->proof_image);
+        $normalized = str_replace('\\', '/', $this->proof_image);
+        $normalized = ltrim($normalized, '/');
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = substr($normalized, 8);
+        }
+
+        return url('storage/' . $normalized);
     }
 
     /**

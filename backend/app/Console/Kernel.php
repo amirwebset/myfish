@@ -12,7 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Jalankan pengecekan dan pembatalan pesanan kedaluwarsa setiap jam
+        $schedule->command('orders:cancel-expired')->hourly();
     }
 
     /**

@@ -83,15 +83,26 @@ class Product extends Model
      */
     public function getImageUrlAttribute(): string
     {
-        if (!$this->image) {
-            return asset('images/default-fish.jpg');
+        if (empty($this->image)) {
+            return '/images/default-fish.svg';
         }
 
         if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
             return $this->image;
         }
 
-        return asset('storage/' . $this->image);
+        $normalized = str_replace('\\', '/', $this->image);
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'images/')) {
+            return '/' . $normalized;
+        }
+
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = substr($normalized, 8);
+        }
+
+        return url('storage/' . $normalized);
     }
 
     /**

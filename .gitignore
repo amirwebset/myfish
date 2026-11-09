@@ -1,0 +1,33 @@
+# Environment configuration
+.env
+.env.backup
+.env.production
+backend/.env
+frontend/.env
+test_laravel/.env
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Laravel / PHP caches
+/backend/vendor/
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+/test_laravel/vendor/
+/test_laravel/storage/framework/cache/*
+/test_laravel/storage/framework/sessions/*
+/test_laravel/storage/framework/views/*
+/test_laravel/storage/logs/*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

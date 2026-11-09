@@ -34,7 +34,7 @@ class PaymentController extends Controller
                 'account_number' => $payment->account_number,
                 'amount' => (float) $payment->amount,
                 'formatted_amount' => 'Rp ' . number_format($payment->amount, 0, ',', '.'),
-                'proof_image' => asset('storage/' . $payment->proof_image),
+                'proof_image' => $payment->proof_image ? asset('storage/' . str_replace('\\', '/', $payment->proof_image)) : null,
                 'status' => $payment->status,
                 'notes' => $payment->notes,
                 'rejection_reason' => $payment->rejection_reason,

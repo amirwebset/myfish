@@ -17,6 +17,7 @@ import {
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/product/ProductCard';
+import { MOCK_PRODUCTS } from '../data/mockProducts';
 
 export default function ProductDetailPage() {
   const { identifier } = useParams();
@@ -36,15 +37,33 @@ export default function ProductDetailPage() {
       setQuantity(1);
       try {
         const res = await api.get(`/products/${identifier}`);
-        if (res.data.success) {
+        if (res.data?.success && res.data.data) {
           setProduct(res.data.data);
           setRelated(res.data.related || []);
+          document.title = `IKANKU | ${res.data.data.name}`;
+          setLoading(false);
+          return;
         }
       } catch (err) {
-        console.warn('Failed to load product detail:', err.message);
-      } finally {
-        setLoading(false);
+        console.warn('Backend detail unavailable, matching local fish product:', err.message);
       }
+
+      // Fallback matching from MOCK_PRODUCTS
+      const matched = MOCK_PRODUCTS.find(
+        p => p.slug === identifier || String(p.id) === String(identifier)
+      );
+
+      if (matched) {
+        setProduct(matched);
+        const rel = MOCK_PRODUCTS.filter(
+          p => p.category_id === matched.category_id && p.id !== matched.id
+        ).slice(0, 4);
+        setRelated(rel);
+        document.title = `IKANKU | ${matched.name}`;
+      } else {
+        setProduct(null);
+      }
+      setLoading(false);
     };
 
     fetchDetail();
@@ -134,9 +153,13 @@ export default function ProductDetailPage() {
             <div className="lg:col-span-6">
               <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group">
                 <img
-                  src={product.image_url || product.image || '/images/default-fish.jpg'}
+                  src={product.image_url || product.image || '/images/default-fish.svg'}
                   alt={product.name}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/images/default-fish.svg';
+                  }}
                 />
 
                 {product.category && (

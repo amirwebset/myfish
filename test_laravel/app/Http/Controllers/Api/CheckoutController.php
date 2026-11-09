@@ -9,15 +9,20 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Services\OrderService;
 
 class CheckoutController extends Controller
 {
     /**
-     * Process checkout with database transaction and atomic stock deduction.
+     * Process checkout with database transaction, atomic stock deduction,
+     * live shipping fee calculation, and unique transfer code.
      */
     public function process(Request $request)
     {
         $user = $request->user();
+
+        // 0. Auto-cancel pesanan kedaluwarsa sebelum checkout untuk merilis kuota stok ikan
+        OrderService::cancelExpiredOrders();
 
         $validated = $request->validate([
             'recipient_name' => 'required|string|max:255',
@@ -25,6 +30,11 @@ class CheckoutController extends Controller
             'address' => 'required|string|max:500',
             'notes' => 'nullable|string|max:1000',
             'payment_method' => 'required|string|in:bank_transfer,cod',
+            'shipping_courier' => 'nullable|string|max:100',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'packing_type' => 'nullable|string|max:100',
+            'packing_cost' => 'nullable|numeric|min:0',
+            'unique_code' => 'nullable|integer|min:0|max:999',
         ]);
 
         // Get user's active cart items
@@ -40,9 +50,17 @@ class CheckoutController extends Controller
         }
 
         try {
-            $order = DB::transaction(function () use ($user, $validated, $cartItems) {
-                $totalAmount = 0;
+            $shippingCost = (float) ($validated['shipping_cost'] ?? 25000);
+            $packingCost = (float) ($validated['packing_cost'] ?? 0);
+            $uniqueCode = isset($validated['unique_code']) ? (int) $validated['unique_code'] : rand(100, 899);
+            $courier = $validated['shipping_courier'] ?? 'JNE YES (Pengiriman Cepat Ikan Hidup)';
+            $packingType = $validated['packing_type'] ?? 'Standar Tabung Oksigen & Plastik Dobel';
 
+            $fishSubtotal = 0;
+
+            $order = DB::transaction(function () use (
+                $user, $validated, $cartItems, $shippingCost, $packingCost, $uniqueCode, $courier, $packingType, &$fishSubtotal
+            ) {
                 // 1. Validate stocks with lockForUpdate to prevent race conditions
                 foreach ($cartItems as $item) {
                     $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
@@ -55,26 +73,34 @@ class CheckoutController extends Controller
                         throw new \Exception("Stok produk '{$product->name}' tidak mencukupi (Tersedia: {$product->stock}, Diminta: {$item->quantity}).");
                     }
 
-                    $totalAmount += ($product->price * $item->quantity);
+                    $fishSubtotal += ($product->price * $item->quantity);
                 }
 
-                // 2. Generate unique order number (e.g. ORD-20261024-XXXXX)
+                // Total: Subtotal Ikan + Ongkir + Biaya Packing + Kode Unik Verifikasi Transfer
+                $totalAmount = $fishSubtotal + $shippingCost + $packingCost + $uniqueCode;
+
+                // 2. Generate unique order number (e.g. ORD-20261104-XXXXX)
                 $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
 
-                // 3. Create order record
+                // 3. Format structured logistics tag into order notes
+                $logisticsTag = "[Logistik: {$courier} | Ongkir: {$shippingCost} | Packing: {$packingType} | BiayaPacking: {$packingCost} | KodeUnik: {$uniqueCode}]";
+                $userNotes = trim($validated['notes'] ?? '');
+                $orderNotes = $userNotes ? ($userNotes . "\n" . $logisticsTag) : $logisticsTag;
+
+                // 4. Create order record
                 $order = Order::create([
                     'order_number' => $orderNumber,
                     'user_id' => $user->id,
                     'recipient_name' => $validated['recipient_name'],
                     'phone' => $validated['phone'],
                     'address' => $validated['address'],
-                    'notes' => $validated['notes'] ?? null,
+                    'notes' => $orderNotes,
                     'total_amount' => $totalAmount,
                     'payment_method' => $validated['payment_method'],
                     'status' => 'menunggu_pembayaran',
                 ]);
 
-                // 4. Create frozen order items and deduct product stock
+                // 5. Create frozen order items and deduct product stock
                 foreach ($cartItems as $item) {
                     $product = Product::where('id', $item->product_id)->first();
 
@@ -87,11 +113,11 @@ class CheckoutController extends Controller
                         'subtotal' => $product->price * $item->quantity,
                     ]);
 
-                    // Deduct stock
+                    // Deduct stock atomically
                     $product->decrement('stock', $item->quantity);
                 }
 
-                // 5. Clear cart
+                // 6. Clear user cart
                 Cart::where('user_id', $user->id)->delete();
 
                 return $order;
@@ -99,7 +125,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.',
+                'message' => 'Pesanan berhasil dibuat! Silakan lakukan pembayaran sesuai nominal transfer.',
                 'order' => [
                     'id' => $order->id,
                     'order_number' => $order->order_number,
@@ -110,7 +136,17 @@ class CheckoutController extends Controller
                     'recipient_name' => $order->recipient_name,
                     'phone' => $order->phone,
                     'address' => $order->address,
+                    'notes' => $order->notes,
                     'payment_method' => $order->payment_method,
+                    'fish_subtotal' => $fishSubtotal,
+                    'formatted_fish_subtotal' => 'Rp ' . number_format($fishSubtotal, 0, ',', '.'),
+                    'shipping_cost' => $shippingCost,
+                    'formatted_shipping_cost' => 'Rp ' . number_format($shippingCost, 0, ',', '.'),
+                    'shipping_courier' => $courier,
+                    'packing_cost' => $packingCost,
+                    'formatted_packing_cost' => 'Rp ' . number_format($packingCost, 0, ',', '.'),
+                    'packing_type' => $packingType,
+                    'unique_code' => $uniqueCode,
                     'created_at' => $order->created_at->format('d M Y H:i'),
                 ],
             ], 201);

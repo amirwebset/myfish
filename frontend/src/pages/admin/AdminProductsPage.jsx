@@ -13,6 +13,7 @@ import {
   Star
 } from 'lucide-react';
 import api from '../../services/api';
+import Pagination from '../../components/common/Pagination';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -20,6 +21,8 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +42,10 @@ export default function AdminProductsPage() {
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
 
+  useEffect(() => {
+    document.title = 'IKANKU Admin | Kelola Produk Ikan Hias';
+  }, []);
+
   const fetchCategories = async () => {
     try {
       const res = await api.get('/admin/categories');
@@ -50,16 +57,19 @@ export default function AdminProductsPage() {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (targetPage = page) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: targetPage };
       if (search) params.search = search;
       if (categoryFilter) params.category_id = categoryFilter;
 
       const res = await api.get('/admin/products', { params });
       if (res.data.success) {
         setProducts(res.data.data);
+        if (res.data.meta) {
+          setMeta(res.data.meta);
+        }
       }
     } catch (err) {
       console.warn('Failed to load admin products:', err.message);
@@ -73,8 +83,14 @@ export default function AdminProductsPage() {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
+    setPage(1);
+    fetchProducts(1);
   }, [search, categoryFilter]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchProducts(newPage);
+  };
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
@@ -260,9 +276,13 @@ export default function AdminProductsPage() {
                   <tr key={p.id} className="hover:bg-slate-50/80 transition">
                     <td className="px-5 py-3 flex items-center gap-3">
                       <img
-                        src={p.image_url || '/images/default-fish.jpg'}
+                        src={p.image_url || '/images/default-fish.svg'}
                         alt={p.name}
                         className="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/images/default-fish.svg';
+                        }}
                       />
                       <div>
                         <span className="font-bold text-slate-900 block text-sm">{p.name}</span>
@@ -327,6 +347,17 @@ export default function AdminProductsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Products Table Pagination */}
+        <div className="border-t border-slate-100 px-4">
+          <Pagination
+            currentPage={meta.current_page}
+            lastPage={meta.last_page}
+            total={meta.total}
+            perPage={20}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
 

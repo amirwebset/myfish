@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, Filter, SlidersHorizontal, RotateCcw, Fish, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import ProductCard from '../components/product/ProductCard';
+import Pagination from '../components/common/Pagination';
+import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../data/mockProducts';
 
 export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,40 +26,100 @@ export default function CatalogPage() {
     const fetchCategories = async () => {
       try {
         const res = await api.get('/categories');
-        if (res.data.success) {
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
           setCategories(res.data.data);
+          return;
         }
       } catch (err) {
-        console.warn('Failed to load categories:', err.message);
+        console.warn('Backend categories unavailable, using local categories:', err.message);
       }
+      setCategories(MOCK_CATEGORIES);
     };
     fetchCategories();
+  }, []);
+
+  // Set dynamic page title
+  useEffect(() => {
+    document.title = 'IKANKU | Katalog Ikan Hias Desa Pasanggar';
   }, []);
 
   // Fetch products whenever filters or searchParams change
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
+      const searchVal = (searchParams.get('search') || '').toLowerCase().trim();
+      const catVal = searchParams.get('category') || '';
+      const sortVal = searchParams.get('sort') || 'latest';
+      const minP = searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')) : null;
+      const maxP = searchParams.get('max_price') ? parseFloat(searchParams.get('max_price')) : null;
+      const page = parseInt(searchParams.get('page') || '1', 10);
+
       try {
         const params = {
-          search: searchParams.get('search') || undefined,
-          category: searchParams.get('category') || undefined,
-          sort: searchParams.get('sort') || 'latest',
-          min_price: searchParams.get('min_price') || undefined,
-          max_price: searchParams.get('max_price') || undefined,
+          search: searchVal || undefined,
+          category: catVal || undefined,
+          sort: sortVal,
+          min_price: minP || undefined,
+          max_price: maxP || undefined,
+          page,
           per_page: 24,
         };
 
         const res = await api.get('/products', { params });
-        if (res.data.success) {
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
           setProducts(res.data.data);
-          setMeta(res.data.meta);
+          setMeta(res.data.meta || { total: res.data.data.length, current_page: page, last_page: 1 });
+          setLoading(false);
+          return;
         }
       } catch (err) {
-        console.warn('Failed to load catalog products:', err.message);
-      } finally {
-        setLoading(false);
+        console.warn('Backend products unavailable, using diverse Pasanggar fish catalog:', err.message);
       }
+
+      // Fallback: Filter MOCK_PRODUCTS locally
+      let filtered = [...MOCK_PRODUCTS];
+
+      if (searchVal) {
+        filtered = filtered.filter(p =>
+          p.name.toLowerCase().includes(searchVal) ||
+          p.description.toLowerCase().includes(searchVal)
+        );
+      }
+
+      if (catVal) {
+        filtered = filtered.filter(p =>
+          p.category?.slug === catVal || String(p.category_id) === String(catVal)
+        );
+      }
+
+      if (minP !== null && !isNaN(minP)) {
+        filtered = filtered.filter(p => p.price >= minP);
+      }
+
+      if (maxP !== null && !isNaN(maxP)) {
+        filtered = filtered.filter(p => p.price <= maxP);
+      }
+
+      // Sort
+      if (sortVal === 'price_asc') {
+        filtered.sort((a, b) => a.price - b.price);
+      } else if (sortVal === 'price_desc') {
+        filtered.sort((a, b) => b.price - a.price);
+      } else if (sortVal === 'name_asc') {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        // latest / default
+        filtered.sort((a, b) => b.id - a.id);
+      }
+
+      setProducts(filtered);
+      setMeta({
+        total: filtered.length,
+        current_page: page,
+        last_page: Math.ceil(filtered.length / 24) || 1,
+        per_page: 24,
+      });
+      setLoading(false);
     };
 
     fetchProducts();
@@ -95,7 +157,15 @@ export default function CatalogPage() {
     } else {
       delete newParams.category;
     }
+    delete newParams.page; // Reset to page 1 on category change
     setSearchParams(newParams);
+  };
+
+  const handlePageChange = (newPage) => {
+    const newParams = Object.fromEntries(searchParams.entries());
+    newParams.page = newPage;
+    setSearchParams(newParams);
+    window.scrollTo({ top: 120, behavior: 'smooth' });
   };
 
   return (
@@ -241,11 +311,24 @@ export default function CatalogPage() {
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="mt-8 pt-4 border-t border-slate-200">
+              <Pagination
+                currentPage={meta.current_page}
+                lastPage={meta.last_page}
+                total={meta.total}
+                perPage={meta.per_page || 24}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </>
         ) : (
           /* Empty State */
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm max-w-lg mx-auto">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, 
@@ -19,6 +19,10 @@ export default function CartPage() {
   const { items, count, subtotal, formattedSubtotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'IKANKU | Keranjang Belanja Ikan Hias';
+  }, []);
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
@@ -101,9 +105,13 @@ export default function CartPage() {
                 {/* Fish Thumbnail */}
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
                   <img
-                    src={item.image_url || '/images/default-fish.jpg'}
+                    src={item.image_url || '/images/default-fish.svg'}
                     alt={item.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/default-fish.svg';
+                    }}
                   />
                 </div>
 

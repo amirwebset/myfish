@@ -43,6 +43,7 @@ export default function ProfilePage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
+    document.title = 'IKANKU | Profil Akun & Riwayat Pesanan';
     if (!isAuthenticated) {
       navigate('/login?redirect=/profil');
       return;

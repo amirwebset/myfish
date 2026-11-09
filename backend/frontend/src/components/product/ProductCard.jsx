@@ -31,10 +31,14 @@ export default function ProductCard({ product }) {
       {/* Product Image & Badges */}
       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
         <img
-          src={product.image_url || product.image || '/images/default-fish.jpg'}
+          src={product.image_url || product.image || '/images/default-fish.svg'}
           alt={product.name}
           className="w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-500"
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/images/default-fish.svg';
+          }}
         />
 
         {/* Category Pill */}

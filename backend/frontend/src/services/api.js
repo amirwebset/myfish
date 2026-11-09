@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-// Base API URL pointing to the local Laravel backend
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// Base API URL pointing to the Laravel backend (supports .env and fallback)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 4000,
   headers: {
     'Accept': 'application/json',
   },

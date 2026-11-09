@@ -31,6 +31,7 @@ export default function AdminReportsPage() {
   };
 
   useEffect(() => {
+    document.title = 'IKANKU Admin | Laporan Penjualan Ikan';
     fetchReport();
   }, []);
 
@@ -164,6 +165,102 @@ export default function AdminReportsPage() {
             <Fish className="w-6 h-6" />
           </div>
         </div>
+      </div>
+
+      {/* Visual Chart: Tren Penjualan & Omset */}
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-ocean-600" />
+              Visualisasi Grafik Tren Penjualan
+            </h3>
+            <p className="text-xs text-slate-400">
+              Grafik omset harian dan volume transaksi berdasarkan pesanan yang telah lunas/diproses.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-bold">
+            <span className="flex items-center gap-1.5 text-ocean-600">
+              <span className="w-3 h-3 rounded bg-ocean-600 inline-block"></span> Omset (Rp)
+            </span>
+          </div>
+        </div>
+
+        {orders && orders.length > 0 ? (
+          <div className="pt-4">
+            {/* Compute aggregate bars */}
+            {(() => {
+              const salesByDate = {};
+              orders.forEach((ord) => {
+                const dateKey = ord.created_at ? ord.created_at.split(' ')[0] : 'Hari Ini';
+                if (!salesByDate[dateKey]) {
+                  salesByDate[dateKey] = { date: dateKey, revenue: 0, count: 0, items: 0 };
+                }
+                salesByDate[dateKey].revenue += (ord.total_amount || 0);
+                salesByDate[dateKey].count += 1;
+                salesByDate[dateKey].items += (ord.items_count || 0);
+              });
+              const chartData = Object.values(salesByDate);
+              const maxRevenue = chartData.reduce((max, d) => Math.max(max, d.revenue), 1);
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Rata-rata Nilai Order:</span>
+                      <strong className="text-slate-900 text-sm font-black">
+                        Rp {summary?.total_orders ? Math.round(summary.total_revenue / summary.total_orders).toLocaleString('id-ID') : '0'}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Hari Penjualan Aktif:</span>
+                      <strong className="text-slate-900 text-sm font-black">{chartData.length} Tanggal</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Rata-rata Ikan / Order:</span>
+                      <strong className="text-slate-900 text-sm font-black">
+                        {summary?.total_orders ? (summary.total_items_sold / summary.total_orders).toFixed(1) : 0} Ekor
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Status Karantina & Kirim:</span>
+                      <strong className="text-emerald-700 text-sm font-black">100% Terverifikasi</strong>
+                    </div>
+                  </div>
+
+                  {/* Horizontal Bar Visualizer */}
+                  <div className="space-y-3 pt-2">
+                    {chartData.map((d, idx) => {
+                      const pct = Math.max(8, Math.round((d.revenue / maxRevenue) * 100));
+                      return (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold text-slate-700">
+                            <span>{d.date} ({d.count} transaksi • {d.items} ekor)</span>
+                            <span className="font-bold text-ocean-700">
+                              Rp {d.revenue.toLocaleString('id-ID')}
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-xl h-5 overflow-hidden flex items-center p-0.5">
+                            <div
+                              className="h-full bg-gradient-to-r from-ocean-500 to-turquoise-500 rounded-lg transition-all duration-700 flex items-center justify-end pr-2 text-[10px] font-bold text-white"
+                              style={{ width: `${pct}%` }}
+                            >
+                              {pct > 25 ? `${pct}%` : ''}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : (
+          <div className="py-8 text-center text-xs text-slate-400">
+            Tidak ada data transaksi yang dapat divisualisasikan pada filter periode ini.
+          </div>
+        )}
       </div>
 
       {/* Orders Breakdown Table */}

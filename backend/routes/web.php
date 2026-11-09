@@ -93,3 +93,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->as('admin.')->group(funct
     // Laporan Penjualan
     Route::get('/laporan', [AdminReportController::class, 'index'])->name('reports.index');
 });
+
+// File server fallback for uploaded product images and payment proofs
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    return response()->file($fullPath);
+})->where('path', '.*');

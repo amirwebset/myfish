@@ -11,11 +11,14 @@ import {
   ExternalLink
 } from 'lucide-react';
 import api from '../../services/api';
+import Pagination from '../../components/common/Pagination';
 
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
 
   // Preview Image Modal
   const [previewImage, setPreviewImage] = useState(null);
@@ -27,15 +30,22 @@ export default function AdminPaymentsPage() {
   const [message, setMessage] = useState('');
   const [processingId, setProcessingId] = useState(null);
 
-  const fetchPayments = async () => {
+  useEffect(() => {
+    document.title = 'IKANKU Admin | Verifikasi Pembayaran';
+  }, []);
+
+  const fetchPayments = async (targetPage = page) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: targetPage };
       if (statusFilter !== 'all') params.status = statusFilter;
 
       const res = await api.get('/admin/payments', { params });
       if (res.data.success) {
         setPayments(res.data.data);
+        if (res.data.meta) {
+          setMeta(res.data.meta);
+        }
       }
     } catch (err) {
       console.warn('Failed to load admin payments:', err.message);
@@ -45,8 +55,14 @@ export default function AdminPaymentsPage() {
   };
 
   useEffect(() => {
-    fetchPayments();
+    setPage(1);
+    fetchPayments(1);
   }, [statusFilter]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchPayments(newPage);
+  };
 
   const handleVerify = async (id, orderNumber) => {
     if (!confirm(`Verifikasi dan terima pembayaran untuk pesanan ${orderNumber}?`)) return;
@@ -233,6 +249,17 @@ export default function AdminPaymentsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Payments Table Pagination */}
+        <div className="border-t border-slate-100 px-4">
+          <Pagination
+            currentPage={meta.current_page}
+            lastPage={meta.last_page}
+            total={meta.total}
+            perPage={20}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
 
       {/* Modal Preview Gambar Bukti */}
@@ -246,7 +273,15 @@ export default function AdminPaymentsPage() {
               </button>
             </div>
             <div className="aspect-[3/4] max-h-[70vh] rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
-              <img src={previewImage} alt="Bukti Transfer" className="w-full h-full object-contain" />
+              <img
+                src={previewImage}
+                alt="Bukti Transfer"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/images/default-fish.svg';
+                }}
+              />
             </div>
             <div className="mt-4 text-center">
               <a

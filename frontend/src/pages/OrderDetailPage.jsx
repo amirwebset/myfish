@@ -42,6 +42,7 @@ export default function OrderDetailPage() {
       if (res.data.success) {
         setOrder(res.data.order);
         setAmount(res.data.order.total_amount);
+        document.title = `IKANKU | Pesanan #${res.data.order.order_number}`;
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memuat rincian pesanan.');
@@ -236,17 +237,15 @@ export default function OrderDetailPage() {
             {order.items.map((item) => (
               <div key={item.id} className="py-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.product_name}
-                      className="w-14 h-14 rounded-xl object-cover bg-slate-100"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-ocean-50 text-ocean-600 flex items-center justify-center font-bold">
-                      🐠
-                    </div>
-                  )}
+                  <img
+                    src={item.image_url || '/images/default-fish.svg'}
+                    alt={item.product_name}
+                    className="w-14 h-14 rounded-xl object-cover bg-slate-100 shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/default-fish.svg';
+                    }}
+                  />
                   <div>
                     <h4 className="text-sm font-bold text-slate-800">{item.product_name}</h4>
                     <p className="text-xs text-slate-400">
@@ -261,9 +260,64 @@ export default function OrderDetailPage() {
             ))}
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex justify-between items-baseline">
-            <span className="text-sm font-bold text-slate-600">Total Tagihan</span>
-            <span className="text-2xl font-black text-ocean-700">{order.formatted_total}</span>
+          {/* Itemized Financial Breakdown */}
+          <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-600">
+            <div className="flex justify-between">
+              <span>Subtotal Ikan ({order.items?.reduce((acc, i) => acc + i.quantity, 0)} ekor)</span>
+              <span className="font-bold text-slate-800">
+                {order.formatted_fish_subtotal || ('Rp ' + Number(order.items?.reduce((acc, i) => acc + i.subtotal, 0) || 0).toLocaleString('id-ID'))}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <div>
+                <span>Ongkir Ekspedisi</span>
+                {order.shipping_courier && (
+                  <span className="text-[10px] text-slate-400 block">{order.shipping_courier}</span>
+                )}
+              </div>
+              <span className="font-bold text-slate-800">
+                {order.formatted_shipping_cost || 'Rp 25.000'}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <div>
+                <span>Kemasan Karantina Oksigen</span>
+                {order.packing_type && (
+                  <span className="text-[10px] text-slate-400 block">{order.packing_type}</span>
+                )}
+              </div>
+              <span className="font-bold text-slate-800">
+                {order.formatted_packing_cost || 'Gratis'}
+              </span>
+            </div>
+
+            {order.unique_code > 0 && (
+              <div className="flex justify-between items-center text-ocean-700 bg-ocean-50/50 p-2 rounded-xl">
+                <span>Kode Unik Verifikasi Otomatis</span>
+                <span className="font-mono font-bold">+ Rp {order.unique_code}</span>
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-slate-100 flex justify-between items-baseline">
+              <div>
+                <span className="text-sm font-black text-slate-900 block">Total Tagihan Transfer</span>
+                <span className="text-[10px] text-slate-400">Harap transfer tepat hingga 3 digit terakhir</span>
+              </div>
+              <span className="text-2xl font-black text-ocean-700">{order.formatted_total}</span>
+            </div>
+          </div>
+
+          {/* DOA Warranty Info Card */}
+          <div className="mt-4 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Ketentuan Garansi 100% Ikan Hidup (Dead on Arrival - DOA)</p>
+              <p className="text-[11px] text-amber-800/90 mt-1 leading-relaxed">
+                Jika ikan tiba dalam kondisi mati, segera rekam <strong>video unboxing utuh tanpa jeda (uncut)</strong> saat membuka box styrofoam dalam kurun waktu maksimal 2 jam setelah kurir tiba, lalu hubungi layanan CS Desa Pasanggar untuk klaim ganti ikan / pengembalian dana.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -468,6 +522,10 @@ export default function OrderDetailPage() {
                     src={order.payment.proof_image}
                     alt="Bukti Transfer"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/default-fish.svg';
+                    }}
                   />
                 </a>
               </div>

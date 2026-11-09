@@ -1,21 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Search, ShoppingBag, MapPin, Phone, Mail } from 'lucide-react';
 import api from '../../services/api';
+import Pagination from '../../components/common/Pagination';
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
 
-  const fetchCustomers = async () => {
+  useEffect(() => {
+    document.title = 'IKANKU Admin | Data Pelanggan Terdaftar';
+  }, []);
+
+  const fetchCustomers = async (targetPage = page) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: targetPage };
       if (search) params.search = search;
 
       const res = await api.get('/admin/customers', { params });
       if (res.data.success) {
         setCustomers(res.data.data);
+        if (res.data.meta) {
+          setMeta(res.data.meta);
+        }
       }
     } catch (err) {
       console.warn('Failed to load customers:', err.message);
@@ -25,8 +35,14 @@ export default function AdminCustomersPage() {
   };
 
   useEffect(() => {
-    fetchCustomers();
+    setPage(1);
+    fetchCustomers(1);
   }, [search]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchCustomers(newPage);
+  };
 
   return (
     <div className="space-y-6">
@@ -111,6 +127,17 @@ export default function AdminCustomersPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Pagination */}
+        <div className="border-t border-slate-100 px-4">
+          <Pagination
+            currentPage={meta.current_page}
+            lastPage={meta.last_page}
+            total={meta.total}
+            perPage={20}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
 

@@ -53,7 +53,7 @@ class OrderController extends Controller
                     'status' => $order->payment->status,
                     'bank_name' => $order->payment->bank_name,
                     'amount' => (float) $order->payment->amount,
-                    'proof_image' => asset('storage/' . $order->payment->proof_image),
+                    'proof_image' => $order->payment->proof_image ? asset('storage/' . str_replace('\\', '/', $order->payment->proof_image)) : null,
                 ] : null,
             ];
         });
@@ -121,7 +121,7 @@ class OrderController extends Controller
                     'account_number' => $order->payment->account_number,
                     'amount' => (float) $order->payment->amount,
                     'formatted_amount' => 'Rp ' . number_format($order->payment->amount, 0, ',', '.'),
-                    'proof_image' => asset('storage/' . $order->payment->proof_image),
+                    'proof_image' => $order->payment->proof_image ? asset('storage/' . str_replace('\\', '/', $order->payment->proof_image)) : null,
                     'status' => $order->payment->status,
                     'rejection_reason' => $order->payment->rejection_reason,
                     'created_at' => $order->payment->created_at->format('d M Y H:i'),

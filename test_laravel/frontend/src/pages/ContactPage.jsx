@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, MessageSquare } from 'lucide-react';
 
 export default function ContactPage() {
@@ -7,6 +7,10 @@ export default function ContactPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    document.title = 'IKANKU | Kontak Kami & Layanan Pelanggan';
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();

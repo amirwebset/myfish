@@ -32,6 +32,7 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
+    document.title = 'IKANKU Admin | Dashboard Desa Pasanggar';
     fetchDashboard();
   }, []);
 
