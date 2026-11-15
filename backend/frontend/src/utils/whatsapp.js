@@ -1,5 +1,5 @@
 // Helper utilities for WhatsApp integration in IKANKU
-export const DEFAULT_WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '6281234567890';
+export const DEFAULT_WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '6281249412813';
 
 /**
  * Clean phone number to international WhatsApp format (62...)
@@ -84,3 +84,4 @@ Alamat: ${recipient.address || '-'}`;
 
   return text;
 }
+

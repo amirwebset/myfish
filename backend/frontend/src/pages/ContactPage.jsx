@@ -63,7 +63,7 @@ export default function ContactPage() {
               <div className="flex-1">
                 <h4 className="text-sm font-bold text-slate-900">WhatsApp & Telepon Resmi</h4>
                 <p className="text-xs text-slate-600 mt-1">
-                  0812-3456-7890 (Customer Service Pasanggar)
+                  0812-4941-2813 (Customer Service Pasanggar)
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Respon cepat via WhatsApp chat</p>
                 <a

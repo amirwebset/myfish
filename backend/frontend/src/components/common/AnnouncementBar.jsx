@@ -26,7 +26,7 @@ export default function AnnouncementBar() {
             className="inline-flex items-center gap-1.5 text-emerald-300 hover:text-emerald-200 transition font-bold"
           >
             <MessageSquare className="w-3 h-3 text-emerald-400" />
-            CS WhatsApp: 0812-3456-7890
+            CS WhatsApp: 0812-4941-2813
           </a>
         </div>
 
@@ -34,3 +34,4 @@ export default function AnnouncementBar() {
     </div>
   );
 }
+

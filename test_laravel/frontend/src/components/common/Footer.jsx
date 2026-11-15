@@ -84,7 +84,14 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-turquoise-400 shrink-0" />
-                <span>WhatsApp: 0812-3456-7890</span>
+                <a
+                  href="https://wa.me/6281249412813?text=Halo%20Admin%20IKANKU%20Pasanggar"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 transition"
+                >
+                  WhatsApp: 0812-4941-2813
+                </a>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-coral-500 shrink-0" />
