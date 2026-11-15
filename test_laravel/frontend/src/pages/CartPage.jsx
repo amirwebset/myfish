@@ -10,9 +10,11 @@ import {
   Truck, 
   ArrowLeft,
   Fish,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getWhatsAppUrl, generateCartOrderMessage } from '../utils/whatsapp';
 import { useAuth } from '../context/AuthContext';
 
 export default function CartPage() {
@@ -30,6 +32,12 @@ export default function CartPage() {
     } else {
       navigate('/checkout');
     }
+  };
+
+  const handleWhatsAppCheckout = () => {
+    if (items.length === 0 || hasOutOfStockItem) return;
+    const msg = generateCartOrderMessage(items, subtotal);
+    window.open(getWhatsAppUrl(msg), '_blank');
   };
 
   const hasOutOfStockItem = items.some(item => !item.is_in_stock);
@@ -244,17 +252,33 @@ export default function CartPage() {
                 </div>
               </div>
 
+              {/* Direct WhatsApp Quick Order */}
+              <button
+                type="button"
+                onClick={handleWhatsAppCheckout}
+                disabled={hasOutOfStockItem}
+                className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/40 transition active:scale-98"
+                title="Pesan langsung ke WhatsApp peternak tanpa wajib login"
+              >
+                <MessageSquare className="w-5 h-5" />
+                Pesan Cepat via WhatsApp
+              </button>
+
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
               <button
                 onClick={handleCheckout}
                 disabled={hasOutOfStockItem}
-                className={`w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
-                  hasOutOfStockItem
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-                    : 'bg-ocean-600 hover:bg-ocean-700 text-white shadow-ocean-600/25 hover:shadow-ocean-600/40 active:scale-98'
+                className={`w-full py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-slate-200 bg-slate-50 text-slate-700 hover:bg-white hover:border-slate-300 transition ${
+                  hasOutOfStockItem ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                Lanjut ke Checkout
-                <ArrowRight className="w-4 h-4" />
+                Lanjut ke Formulir Checkout
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
 
               <div className="p-3.5 rounded-xl bg-ocean-50/60 border border-ocean-100 text-xs text-ocean-800 space-y-1.5">

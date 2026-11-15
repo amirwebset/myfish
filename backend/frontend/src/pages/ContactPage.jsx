@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, MessageSquare, ArrowRight } from 'lucide-react';
+import { getWhatsAppUrl } from '../utils/whatsapp';
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -56,15 +57,24 @@ export default function ContactPage() {
             </div>
 
             <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-turquoise-100 text-turquoise-700 flex items-center justify-center shrink-0">
-                <Phone className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <MessageSquare className="w-6 h-6" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">WhatsApp & Telepon</h4>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-slate-900">WhatsApp & Telepon Resmi</h4>
                 <p className="text-xs text-slate-600 mt-1">
-                  0812-3456-7890 (Customer Service)
+                  0812-3456-7890 (Customer Service Pasanggar)
                 </p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Respon cepat via WhatsApp chat</p>
+                <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Respon cepat via WhatsApp chat</p>
+                <a
+                  href={getWhatsAppUrl('Halo Pengelola IKANKU Desa Pasanggar, saya ingin bertanya mengenai pemesanan ikan hias.')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Hubungi via WhatsApp
+                </a>
               </div>
             </div>
 

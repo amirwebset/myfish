@@ -14,11 +14,13 @@ import {
   Truck,
   Box,
   Sparkles,
-  Info
+  Info,
+  MessageSquare
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { getWhatsAppUrl, generateCartOrderMessage } from '../utils/whatsapp';
 
 export default function CheckoutPage() {
   const { items, count, subtotal, formattedSubtotal, fetchCart } = useCart();
@@ -82,6 +84,7 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [waFallbackReady, setWaFallbackReady] = useState(false);
 
   useEffect(() => {
     document.title = 'IKANKU | Checkout & Pembayaran Pesanan';
@@ -98,6 +101,15 @@ export default function CheckoutPage() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSendWhatsAppOrder = () => {
+    if (!formData.recipient_name || !formData.phone || !formData.address) {
+      setError('Mohon lengkapi Nama Penerima, Nomor Telepon, dan Alamat Pengiriman sebelum kirim ke WhatsApp.');
+      return;
+    }
+    const msg = generateCartOrderMessage(items, subtotal, selectedCourier, selectedPacking, formData);
+    window.open(getWhatsAppUrl(msg), '_blank');
   };
 
   // Kalkulasi Total Real-time
@@ -137,7 +149,8 @@ export default function CheckoutPage() {
         setError(res.data.message || 'Gagal memproses pesanan.');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Terjadi kesalahan saat memproses pesanan Anda.');
+      setWaFallbackReady(true);
+      setError(err.response?.data?.message || 'Server backend belum terhubung ke database online (Vercel). Anda dapat langsung mengirim formulir pesanan ini via WhatsApp ke peternak.');
     } finally {
       setLoading(false);
     }
@@ -456,19 +469,37 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* Submit to System */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-ocean-600 to-turquoise-600 hover:from-ocean-700 hover:to-turquoise-700 shadow-xl shadow-ocean-600/20 hover:shadow-ocean-600/35 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-ocean-600 to-turquoise-600 hover:from-ocean-700 hover:to-turquoise-700 shadow-xl shadow-ocean-600/20 hover:shadow-ocean-600/35 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {loading ? (
                     'Memproses Pesanan...'
                   ) : (
                     <>
-                      <CheckCircle2 className="w-5 h-5" />
-                      Buat Pesanan Sekarang
+                      <CheckCircle2 className="w-4 h-4" />
+                      Konfirmasi Pesanan di Website
                     </>
                   )}
+                </button>
+
+                {/* Direct WhatsApp Order Option */}
+                <div className="relative flex py-0.5 items-center">
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="flex-shrink mx-2 text-[10px] font-bold text-slate-400 uppercase">Atau Langsung</span>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSendWhatsAppOrder}
+                  className="w-full py-3.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/35 transition flex items-center justify-center gap-2"
+                  title="Kirim rincian lengkap pesanan ini langsung ke WhatsApp peternak"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Kirim Pesanan via WhatsApp
                 </button>
 
                 <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 space-y-1.5">

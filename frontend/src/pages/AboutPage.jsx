@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Fish, ShieldCheck, Heart, MapPin, Award, Users, BookOpen } from 'lucide-react';
+import { Fish, ShieldCheck, Heart, MapPin, Award, Users, BookOpen, Truck, CheckCircle2, Box } from 'lucide-react';
 
 export default function AboutPage() {
   useEffect(() => {
@@ -67,6 +67,45 @@ export default function AboutPage() {
             <p className="text-xs text-slate-500 leading-relaxed">
               Dikembangkan sebagai luaran skripsi Teknik Informatika untuk menguji efektivitas web e-commerce berbasis React, Vite, dan Laravel REST API.
             </p>
+          </div>
+        </div>
+
+        {/* Quality & Packaging Standard */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-10 shadow-sm space-y-6">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+            <Truck className="w-6 h-6 text-turquoise-600" />
+            Standar Karantina & Pengemasan Ikan Hidup Pasanggar
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+              <div className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                1. Karantina 24 Jam
+              </div>
+              <p className="leading-relaxed text-slate-500">
+                Sebelum dikirim, ikan dipuasakan selama 24 jam agar kotoran di kantong air minimal dan mencegah penurunan kadar oksigen selama perjalanan ekspedisi.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+              <div className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                2. Tabung Oksigen Murni
+              </div>
+              <p className="leading-relaxed text-slate-500">
+                Kantong plastik dobel diisi oksigen murni dengan rasio air 30% dan oksigen 70%, menjaga daya tahan hidup ikan hingga 36 jam perjalanan.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+              <div className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                3. Box Styrofoam Bersegel
+              </div>
+              <p className="leading-relaxed text-slate-500">
+                Pengiriman jarak jauh dilindungi kotak styrofoam tebal tahan benturan dengan lakban segel khusus kargo hewan hidup resmi.
+              </p>
+            </div>
           </div>
         </div>
 

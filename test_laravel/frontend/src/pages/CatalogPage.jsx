@@ -50,6 +50,7 @@ export default function CatalogPage() {
       const searchVal = (searchParams.get('search') || '').toLowerCase().trim();
       const catVal = searchParams.get('category') || '';
       const sortVal = searchParams.get('sort') || 'latest';
+      const tagVal = searchParams.get('tag') || '';
       const minP = searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')) : null;
       const maxP = searchParams.get('max_price') ? parseFloat(searchParams.get('max_price')) : null;
       const page = parseInt(searchParams.get('page') || '1', 10);
@@ -90,6 +91,14 @@ export default function CatalogPage() {
         filtered = filtered.filter(p =>
           p.category?.slug === catVal || String(p.category_id) === String(catVal)
         );
+      }
+
+      if (tagVal === 'ready_stock') {
+        filtered = filtered.filter(p => p.stock > 0);
+      } else if (tagVal === 'pemula') {
+        filtered = filtered.filter(p => p.tags?.includes('pemula') || p.care_level?.includes('Mudah'));
+      } else if (tagVal === 'featured') {
+        filtered = filtered.filter(p => p.is_featured);
       }
 
       if (minP !== null && !isNaN(minP)) {
@@ -291,6 +300,43 @@ export default function CatalogPage() {
             ))}
           </div>
 
+          {/* Quick Filter Tag Pills */}
+          <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-slate-400 text-[11px] font-semibold mr-1">Filter Khusus:</span>
+            {[
+              { id: '', label: 'Semua Ikan' },
+              { id: 'ready_stock', label: '✅ Stok Ready' },
+              { id: 'pemula', label: '🌿 Ramah Pemula' },
+              { id: 'featured', label: '⭐ Unggulan Pasanggar' },
+            ].map(pill => {
+              const currentTag = searchParams.get('tag') || '';
+              const isActive = currentTag === pill.id;
+              return (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => {
+                    const p = Object.fromEntries(searchParams.entries());
+                    if (pill.id) {
+                      p.tag = pill.id;
+                    } else {
+                      delete p.tag;
+                    }
+                    delete p.page;
+                    setSearchParams(p);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition ${
+                    isActive
+                      ? 'bg-turquoise-600 text-white shadow-sm'
+                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
+          </div>
+
         </div>
 
         {/* Results Counter */}
@@ -339,9 +385,35 @@ export default function CatalogPage() {
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Tidak ada ikan hias yang cocok dengan kriteria pencarian atau filter yang Anda terapkan.
             </p>
+
+            {/* Keyword Suggestions */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                Coba Cari Ikan Populer Ini:
+              </span>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {['Cupang', 'Koi', 'Guppy', 'Mas Koki', 'Arwana', 'Channa', 'Molly'].map(keyword => (
+                  <button
+                    key={keyword}
+                    type="button"
+                    onClick={() => {
+                      setSearch(keyword);
+                      const p = Object.fromEntries(searchParams.entries());
+                      p.search = keyword;
+                      delete p.page;
+                      setSearchParams(p);
+                    }}
+                    className="px-3 py-1 rounded-full bg-slate-100 hover:bg-ocean-100 text-slate-700 hover:text-ocean-700 text-xs font-semibold transition"
+                  >
+                    {keyword}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               onClick={handleResetFilter}
-              className="mt-5 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-ocean-600 hover:bg-ocean-700 transition"
+              className="mt-6 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-ocean-600 hover:bg-ocean-700 transition shadow-md shadow-ocean-600/20"
             >
               Reset Semua Filter
             </button>

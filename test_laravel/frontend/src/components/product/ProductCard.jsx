@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Eye, Check } from 'lucide-react';
+import { ShoppingBag, Eye, Check, MessageSquare, MapPin } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { getWhatsAppUrl, generateProductInquiryMessage } from '../../utils/whatsapp';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -73,6 +74,11 @@ export default function ProductCard({ product }) {
 
       {/* Product Info */}
       <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-center gap-1 text-[10px] font-bold text-ocean-600 mb-1">
+          <MapPin className="w-3 h-3 text-ocean-500 shrink-0" />
+          <span className="truncate">{product.breeder ? 'Desa Pasanggar' : 'Pasanggar, Madura'}</span>
+        </div>
+
         <Link
           to={`/katalog/${product.slug || product.id}`}
           className="text-base font-bold text-slate-800 hover:text-ocean-600 line-clamp-1 transition-colors mb-1.5"
@@ -85,33 +91,48 @@ export default function ProductCard({ product }) {
           {product.description || 'Ikan hias pilihan peternak Desa Pasanggar, kondisi lincah, sehat, dan siap mempercantik akuarium Anda.'}
         </p>
 
-        {/* Price & Action */}
+        {/* Price & Actions */}
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 block">Harga</span>
-            <span className="text-lg font-black text-ocean-700">
+            <span className="text-[10px] font-semibold text-slate-400 block uppercase">Harga</span>
+            <span className="text-base sm:text-lg font-black text-ocean-700">
               {product.formatted_price || `Rp ${Number(product.price).toLocaleString('id-ID')}`}
             </span>
           </div>
 
-          <button
-            onClick={handleAddToCart}
-            disabled={isOutOfStock || isAdding}
-            className={`p-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center ${
-              isOutOfStock
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                : justAdded
-                ? 'bg-emerald-600 text-white'
-                : 'bg-ocean-600 hover:bg-ocean-700 text-white shadow-md shadow-ocean-600/20 hover:shadow-ocean-600/35 active:scale-95'
-            }`}
-            title={isOutOfStock ? 'Stok Habis' : 'Tambah ke Keranjang'}
-          >
-            {justAdded ? (
-              <Check className="w-5 h-5 animate-scale" />
-            ) : (
-              <ShoppingBag className="w-5 h-5" />
-            )}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Quick WhatsApp Inquiry */}
+            <a
+              href={getWhatsAppUrl(generateProductInquiryMessage(product))}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-2.5 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition"
+              title="Tanya Ikan Ini via WhatsApp"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </a>
+
+            {/* Add to Cart Button */}
+            <button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isAdding}
+              className={`p-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center ${
+                isOutOfStock
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : justAdded
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-ocean-600 hover:bg-ocean-700 text-white shadow-md shadow-ocean-600/20 hover:shadow-ocean-600/35 active:scale-95'
+              }`}
+              title={isOutOfStock ? 'Stok Habis' : 'Tambah ke Keranjang'}
+            >
+              {justAdded ? (
+                <Check className="w-5 h-5 animate-scale" />
+              ) : (
+                <ShoppingBag className="w-5 h-5" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

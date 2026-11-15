@@ -7,6 +7,8 @@ import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import NotificationToast from './components/common/NotificationToast';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import AnnouncementBar from './components/common/AnnouncementBar';
+import FloatingWhatsApp from './components/common/FloatingWhatsApp';
 
 import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
@@ -36,8 +38,13 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 selection:bg-ocean-500 selection:text-white">
-      {/* Show public navbar on non-admin routes */}
-      {!isAdminRoute && <Navbar />}
+      {/* Show public announcement bar & navbar on non-admin routes */}
+      {!isAdminRoute && (
+        <>
+          <AnnouncementBar />
+          <Navbar />
+        </>
+      )}
 
       {/* Main Page Content */}
       <main className="flex-1 flex flex-col">
@@ -69,7 +76,12 @@ function AppContent() {
       </main>
 
       {/* Show public footer on non-admin routes */}
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && (
+        <>
+          <Footer />
+          <FloatingWhatsApp />
+        </>
+      )}
 
       {/* Global Interactive Notification Toast */}
       <NotificationToast toast={toast} />

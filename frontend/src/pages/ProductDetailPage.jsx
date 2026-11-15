@@ -12,12 +12,18 @@ import {
   Layers,
   AlertCircle,
   Clock,
-  Sparkles
+  Sparkles,
+  MessageSquare,
+  MapPin,
+  Award,
+  Droplet,
+  Heart
 } from 'lucide-react';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/product/ProductCard';
 import { MOCK_PRODUCTS } from '../data/mockProducts';
+import { getWhatsAppUrl, generateProductInquiryMessage } from '../utils/whatsapp';
 
 export default function ProductDetailPage() {
   const { identifier } = useParams();
@@ -254,7 +260,7 @@ export default function ProductDetailPage() {
                   <button
                     onClick={handleAddToCart}
                     disabled={isOutOfStock || isAdding}
-                    className={`flex-1 min-w-[200px] py-3.5 px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
+                    className={`flex-1 min-w-[180px] py-3.5 px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
                       isOutOfStock
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                         : addedSuccess
@@ -275,10 +281,80 @@ export default function ProductDetailPage() {
                     )}
                   </button>
 
+                  {/* Direct WhatsApp Chat / Video Request Button */}
+                  <a
+                    href={getWhatsAppUrl(generateProductInquiryMessage(product))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto py-3.5 px-5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition active:scale-98"
+                    title="Minta video ikan atau tanya peternak via WhatsApp"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Minta Video / Chat Peternak
+                  </a>
+
+                </div>
+
+                {/* Spesifikasi Teknis Ikan Hias */}
+                <div className="pt-2">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    Parameter & Spesifikasi Ikan:
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-slate-400 block font-medium">Ukuran (Size)</span>
+                      <strong className="text-slate-800 font-bold">{product.size || 'Size M (Standar)'}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-slate-400 block font-medium">Usia Ikan</span>
+                      <strong className="text-slate-800 font-bold">{product.age || '3 - 4 Bulan'}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-slate-400 block font-medium">Jenis Kelamin</span>
+                      <strong className="text-slate-800 font-bold">{product.gender || 'Jantan (Male)'}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-slate-400 block font-medium">Tingkat Perawatan</span>
+                      <strong className="text-slate-800 font-bold">{product.care_level || 'Mudah (Pemula)'}</strong>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-[11px]">
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2">
+                      <Droplet className="w-4 h-4 text-ocean-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-400 block font-medium">Parameter Air Optimal</span>
+                        <p className="text-slate-700 font-semibold">{product.water_param || 'Suhu 25-28°C • pH 6.8 - 7.5'}</p>
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2">
+                      <Fish className="w-4 h-4 text-turquoise-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-slate-400 block font-medium">Pakan Harian yang Cocok</span>
+                        <p className="text-slate-700 font-semibold">{product.feed || 'Pelet halus, jentik nyamuk, cacing sutra'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Kartu Profil Pembudidaya Desa Pasanggar */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-ocean-50 to-turquoise-50 border border-ocean-100/80 flex items-start gap-3 text-xs">
+                  <div className="w-9 h-9 rounded-xl bg-ocean-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5 font-bold text-ocean-900">
+                      <span>{product.breeder || 'Kelompok Pembudidaya Ikan Desa Pasanggar'}</span>
+                      <Award className="w-3.5 h-3.5 text-ocean-600" />
+                    </div>
+                    <p className="text-[11px] text-ocean-700/90 mt-0.5 leading-relaxed">
+                      Peternak binaan Desa Pasanggar, Kec. Pegantenan, Pamekasan. Ikan dikarantina mandiri 24 jam sebelum dikemas untuk memastikan daya tahan optimal selama perjalanan ekspedisi.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Guarantee Features Box */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600">
                     <ShieldCheck className="w-5 h-5 text-turquoise-600 shrink-0" />
                     <span>Garansi 100% Hidup Sampai Tujuan</span>

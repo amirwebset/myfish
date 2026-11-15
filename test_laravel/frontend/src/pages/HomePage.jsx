@@ -12,11 +12,15 @@ import {
   MapPin, 
   PhoneCall,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Star,
+  MessageSquare,
+  Users
 } from 'lucide-react';
 import api from '../services/api';
 import ProductCard from '../components/product/ProductCard';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../data/mockProducts';
+import { getWhatsAppUrl } from '../utils/whatsapp';
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -436,6 +440,203 @@ export default function HomePage() {
               />
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* 7. KELOMPOK PEMBUDIDAYA MITRA DESA PASANGGAR */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <span className="text-xs font-bold uppercase tracking-wider text-ocean-600 block mb-1">
+              Peternak Lokal
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              Kelompok Pembudidaya Ikan Mitra IKANKU
+            </h2>
+            <p className="text-sm text-slate-500 mt-2">
+              Dikelola langsung oleh kelompok tani pembudidaya ikan air tawar di wilayah Desa Pasanggar, Kec. Pegantenan, Pamekasan.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:shadow-lg hover:border-ocean-300 transition-all space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-ocean-100 text-ocean-700 flex items-center justify-center font-bold">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-ocean-600 uppercase tracking-wider block">Dusun Sumber</span>
+                <h3 className="text-base font-bold text-slate-900">Kelompok Tani Tirta Pasanggar</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Fokus pada pemijahan dan pembesaran varian Cupang Halfmoon, Plakat Multicolor, dan Hellboy kualitas kontes bermental aktif.
+              </p>
+              <div className="pt-2 text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Kapasitas: 1.200 ekor / siklus</span>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:shadow-lg hover:border-turquoise-300 transition-all space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-turquoise-100 text-turquoise-700 flex items-center justify-center font-bold">
+                <Fish className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-turquoise-600 uppercase tracking-wider block">Dusun Tengah</span>
+                <h3 className="text-base font-bold text-slate-900">Kolam Budidaya Tirta Sejahtera</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Spesialisasi ikan Koi Kohaku, Showa, dan Sanke dengan kolam sumber mata air alami, pertumbuhan tulang simetris dan warna menyala.
+              </p>
+              <div className="pt-2 text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Kolam alami bersirkulasi pegunungan</span>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/90 hover:shadow-lg hover:border-sky-300 transition-all space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-sky-600 uppercase tracking-wider block">Dusun Timur</span>
+                <h3 className="text-base font-bold text-slate-900">Sentra Guppy & Aquascape Pasanggar</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Menghasilkan strain murni Guppy Albino Full Red (AFR), Blue Dragon, serta ikan Molly hias yang cocok untuk ekosistem aquascape.
+              </p>
+              <div className="pt-2 text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Indukan strain murni tersertifikasi</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* 8. TESTIMONI PEHOBI IKAN HIAS */}
+      <section className="py-20 bg-slate-50 border-t border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <span className="text-xs font-bold uppercase tracking-wider text-ocean-600 block mb-1">
+              Ulasan Pembeli
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              Apa Kata Pehobi Ikan Hias?
+            </h2>
+            <p className="text-sm text-slate-500 mt-2">
+              Pengalaman nyata pelanggan yang memesan ikan hias langsung dari pembudidaya Desa Pasanggar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+              <div className="flex items-center gap-1 text-amber-400">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400" />
+                ))}
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic">
+                "Pesan Cupang Halfmoon Blue Rim kirim ke Surabaya. Sampai di rumah airnya masih jernih, packing styrofoam tebal dan ikannya langsung aktif flaring. Sangat puas!"
+              </p>
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-ocean-100 text-ocean-700 font-bold flex items-center justify-center text-xs">
+                  BS
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Budi Santoso</h4>
+                  <p className="text-[10px] text-slate-400">Surabaya • Pembeli Cupang</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+              <div className="flex items-center gap-1 text-amber-400">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400" />
+                ))}
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic">
+                "Koi Kohaku 25cm polanya simetris dan warnanya merah menyala persis dengan foto di katalog. Admin ramah kirim video via WhatsApp sebelum dikirim."
+              </p>
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-turquoise-100 text-turquoise-700 font-bold flex items-center justify-center text-xs">
+                  KP
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Kevin Pratama</h4>
+                  <p className="text-[10px] text-slate-400">Malang • Kolektor Koi</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+              <div className="flex items-center gap-1 text-amber-400">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400" />
+                ))}
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic">
+                "Guppy Albino Full Red sepasang langsung lincah di akuarium aquascape saya. Garansi 100% hidup sampai tujuan membuat saya merasa aman belanja jarak jauh."
+              </p>
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs">
+                  RH
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">Rian Hidayat</h4>
+                  <p className="text-[10px] text-slate-400">Semarang • Pehobi Guppy</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* 9. WHATSAPP FAST CONSULTATION CTA */}
+      <section className="py-16 bg-gradient-to-r from-emerald-600 via-teal-700 to-ocean-800 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="space-y-2 text-center lg:text-left">
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-200">
+                Layanan Cepat Peternak Pasanggar
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                Ingin Lihat Video Ikan atau Konsultasi Perawatan?
+              </h2>
+              <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
+                Dapatkan rekaman video terkini dari kolam, informasi stok siap kirim, dan konsultasi pakan langsung bersama pembudidaya Desa Pasanggar.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 shrink-0">
+              <a
+                href={getWhatsAppUrl('Halo Admin IKANKU Pasanggar, saya ingin konsultasi mengenai ketersediaan stok ikan dan minta video ikan hidup.')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3.5 rounded-xl text-xs sm:text-sm font-extrabold text-emerald-950 bg-white hover:bg-emerald-50 shadow-xl transition flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                Chat WhatsApp Sekarang
+              </a>
+
+              <Link
+                to="/katalog"
+                className="px-6 py-3.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur-md transition"
+              >
+                Jelajahi Katalog
+              </Link>
+            </div>
           </div>
         </div>
       </section>
