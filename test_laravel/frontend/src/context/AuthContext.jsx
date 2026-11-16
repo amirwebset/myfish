@@ -48,25 +48,26 @@ export const AuthProvider = ({ children }) => {
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // 1. Prioritas Utama: Akun Demo Administrator Desa Pasanggar
+    // 1. Akun Resmi Administrator Desa Pasanggar
     if (
+      (cleanEmail === 'pasanggar@gmail.com' && cleanPass === 'pasanggarjitu01') ||
       (cleanEmail === 'admin@pasanggarfish.com' && cleanPass === 'admin123') ||
-      (cleanEmail === 'admin' && (cleanPass === 'admin123' || cleanPass === 'admin')) ||
+      (cleanEmail === 'admin' && (cleanPass === 'admin123' || cleanPass === 'admin' || cleanPass === 'pasanggarjitu01')) ||
       (cleanEmail === 'admin@ikanku.com' && cleanPass === 'admin123')
     ) {
-      const demoAdmin = {
+      const adminUser = {
         id: 'admin_pasanggar_1',
         name: 'Administrator Desa Pasanggar',
-        email: 'admin@pasanggarfish.com',
+        email: cleanEmail.includes('@') ? cleanEmail : 'pasanggar@gmail.com',
         role: 'admin',
         phone: '081249412813',
       };
       const fakeToken = 'demo_admin_' + Date.now();
-      setUser(demoAdmin);
+      setUser(adminUser);
       setToken(fakeToken);
       localStorage.setItem('ikanku_token', fakeToken);
-      localStorage.setItem('ikanku_user', JSON.stringify(demoAdmin));
-      return { success: true, user: demoAdmin };
+      localStorage.setItem('ikanku_user', JSON.stringify(adminUser));
+      return { success: true, user: adminUser };
     }
 
     // 2. Akun Demo Pelanggan (Customer)
@@ -106,7 +107,7 @@ export const AuthProvider = ({ children }) => {
 
     return { 
       success: false, 
-      message: 'Email atau kata sandi tidak cocok. Gunakan admin@pasanggarfish.com dan password admin123, atau klik tombol Akses Cepat Demo di bawah.' 
+      message: 'Email atau kata sandi tidak cocok. Gunakan pasanggar@gmail.com dan kata sandi pasanggarjitu01, atau klik tombol Akun Admin di bawah.' 
     };
   };
 

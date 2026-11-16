@@ -137,7 +137,7 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickLogin('admin@pasanggarfish.com', 'admin123')}
+                onClick={() => handleQuickLogin('pasanggar@gmail.com', 'pasanggarjitu01')}
                 className="p-2.5 rounded-xl border border-ocean-200 bg-ocean-50/50 hover:bg-ocean-100/70 text-ocean-800 text-[11px] font-bold flex items-center justify-center gap-1.5 transition"
               >
                 <Shield className="w-3.5 h-3.5 text-ocean-600" />
