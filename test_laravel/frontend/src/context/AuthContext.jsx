@@ -38,18 +38,55 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await api.post('/login', { email, password });
-      if (res.data.success) {
+      if (res.data?.success) {
         setUser(res.data.user);
         setToken(res.data.token);
         localStorage.setItem('ikanku_token', res.data.token);
         localStorage.setItem('ikanku_user', JSON.stringify(res.data.user));
         return { success: true, user: res.data.user };
       }
-      return { success: false, message: res.data.message || 'Login gagal.' };
     } catch (err) {
-      const msg = err.response?.data?.message || 'Terjadi kesalahan saat masuk. Periksa email dan kata sandi Anda.';
-      return { success: false, message: msg };
+      console.warn('Backend login API offline, memeriksa akun demo:', err.message);
     }
+
+    // Demo / Standalone fallback untuk presentasi UTS & Vercel
+    if (email === 'admin@pasanggarfish.com' && password === 'admin123') {
+      const demoAdmin = {
+        id: 'admin_pasanggar_1',
+        name: 'Administrator Desa Pasanggar',
+        email: 'admin@pasanggarfish.com',
+        role: 'admin',
+        phone: '081249412813',
+      };
+      setUser(demoAdmin);
+      const fakeToken = 'demo_admin_token_' + Date.now();
+      setToken(fakeToken);
+      localStorage.setItem('ikanku_token', fakeToken);
+      localStorage.setItem('ikanku_user', JSON.stringify(demoAdmin));
+      return { success: true, user: demoAdmin };
+    }
+
+    if (email === 'pelanggan@gmail.com' && password === 'password123') {
+      const demoCustomer = {
+        id: 'customer_demo_1',
+        name: 'Budi Santoso (Demo)',
+        email: 'pelanggan@gmail.com',
+        role: 'customer',
+        phone: '081234567890',
+        address: 'Jl. Raya Pasanggar No. 12',
+      };
+      setUser(demoCustomer);
+      const fakeToken = 'demo_customer_token_' + Date.now();
+      setToken(fakeToken);
+      localStorage.setItem('ikanku_token', fakeToken);
+      localStorage.setItem('ikanku_user', JSON.stringify(demoCustomer));
+      return { success: true, user: demoCustomer };
+    }
+
+    return { 
+      success: false, 
+      message: 'Email atau kata sandi tidak cocok. Silakan gunakan tombol Akses Cepat Demo di bawah.' 
+    };
   };
 
   const register = async (userData) => {

@@ -66,6 +66,7 @@ function AppContent() {
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="produk" element={<AdminProductsPage />} />
+            <Route path="products" element={<AdminProductsPage />} />
             <Route path="kategori" element={<AdminCategoriesPage />} />
             <Route path="pesanan" element={<AdminOrdersPage />} />
             <Route path="pembayaran" element={<AdminPaymentsPage />} />
