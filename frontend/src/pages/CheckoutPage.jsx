@@ -20,6 +20,7 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { createOrderInDb } from '../services/supabase';
 import { getWhatsAppUrl, generateCartOrderMessage } from '../utils/whatsapp';
 
 export default function CheckoutPage() {
@@ -129,6 +130,34 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
+    // 1. Prioritaskan penyimpanan transaksi ke Database Supabase / Cloud
+    try {
+      const orderRes = await createOrderInDb({
+        customer_name: formData.recipient_name,
+        whatsapp: formData.phone,
+        address: formData.address,
+        district: formData.district || 'Pasanggar / Pegantenan',
+        city: 'Pamekasan',
+        notes: formData.notes ? `${formData.notes} | Kurir: ${selectedCourier.name} | Kemasan: ${selectedPacking.name}` : `Kurir: ${selectedCourier.name} | Kemasan: ${selectedPacking.name}`,
+        shipping_cost: shippingCost + packingCost,
+        total_price: grandTotal,
+        items: items,
+        user_id: user?.id || null,
+      });
+
+      if (orderRes && orderRes.success) {
+        localStorage.removeItem('ikanku_local_cart');
+        await fetchCart();
+        navigate(`/pesanan/${orderRes.order_code}`, {
+          state: { newOrder: true, order: orderRes.order }
+        });
+        return;
+      }
+    } catch (dbErr) {
+      console.warn('Gagal simpan ke Supabase, mencoba backend API:', dbErr.message);
+    }
+
+    // 2. Fallback backend Laravel jika tersedia secara lokal
     const payload = {
       ...formData,
       shipping_courier: selectedCourier.name,
@@ -141,16 +170,17 @@ export default function CheckoutPage() {
     try {
       const res = await api.post('/checkout', payload);
       if (res.data.success) {
-        await fetchCart(); // Refresh cart (will now be empty)
+        await fetchCart();
         navigate(`/pesanan/${res.data.order.order_number}`, {
           state: { newOrder: true }
         });
+        return;
       } else {
         setError(res.data.message || 'Gagal memproses pesanan.');
       }
     } catch (err) {
       setWaFallbackReady(true);
-      setError(err.response?.data?.message || 'Server backend belum terhubung ke database online (Vercel). Anda dapat langsung mengirim formulir pesanan ini via WhatsApp ke peternak.');
+      setError('Database backend belum terhubung ke cloud Vercel. Anda dapat langsung mengirim rincian pesanan ini via WhatsApp ke peternak.');
     } finally {
       setLoading(false);
     }

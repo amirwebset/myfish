@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  ShoppingBag, 
-  Search, 
-  Eye, 
-  Truck, 
-  Check, 
-  X, 
-  Clock, 
+import {
+  ShoppingBag,
+  Search,
+  Eye,
+  Truck,
+  Check,
+  X,
+  Clock,
   AlertCircle,
   FileText
 } from 'lucide-react';
 import api from '../../services/api';
+import { adminFetchOrders, adminUpdateOrderStatus } from '../../services/supabase';
 import Pagination from '../../components/common/Pagination';
 
 export default function AdminOrdersPage() {
@@ -46,9 +47,41 @@ export default function AdminOrdersPage() {
         if (res.data.meta) {
           setMeta(res.data.meta);
         }
+        setLoading(false);
+        return;
       }
     } catch (err) {
-      console.warn('Failed to load admin orders:', err.message);
+      console.warn('Backend admin orders unavailable, loading from Supabase:', err.message);
+    }
+
+    try {
+      const sbOrders = await adminFetchOrders();
+      let filtered = [...sbOrders];
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(o => (o.order_status || o.status) === statusFilter);
+      }
+      if (search.trim()) {
+        const s = search.toLowerCase();
+        filtered = filtered.filter(o =>
+          (o.order_code || o.order_number || '').toLowerCase().includes(s) ||
+          (o.customer_name || o.recipient_name || '').toLowerCase().includes(s)
+        );
+      }
+
+      const normalized = filtered.map(o => ({
+        ...o,
+        order_number: o.order_code || o.order_number,
+        recipient_name: o.customer_name || o.recipient_name,
+        phone: o.whatsapp || o.phone,
+        total_amount: o.total_price || o.total_amount,
+        status: o.order_status || o.status || 'menunggu_konfirmasi',
+        items: o.order_items || o.items || [],
+      }));
+
+      setOrders(normalized);
+      setMeta({ current_page: 1, last_page: 1, total: normalized.length });
+    } catch (sbErr) {
+      console.error('Error fetching admin orders:', sbErr);
     } finally {
       setLoading(false);
     }
@@ -65,6 +98,16 @@ export default function AdminOrdersPage() {
   };
 
   const handleOpenDetail = async (orderId) => {
+    // Cari dulu dari state lokal / Supabase
+    const found = orders.find(o => o.id === orderId);
+    if (found) {
+      setSelectedOrder(found);
+      setNewStatus(found.status);
+      setTrackingNumber(found.tracking_number || '');
+      setError('');
+      return;
+    }
+
     try {
       const res = await api.get(`/admin/orders/${orderId}`);
       if (res.data.success) {
@@ -85,6 +128,20 @@ export default function AdminOrdersPage() {
     setUpdating(true);
     setError('');
 
+    // 1. Coba update via Supabase
+    try {
+      await adminUpdateOrderStatus(selectedOrder.id, newStatus);
+      setMessage('Status pesanan berhasil diperbarui!');
+      setSelectedOrder(null);
+      await fetchOrders();
+      setUpdating(false);
+      setTimeout(() => setMessage(''), 4000);
+      return;
+    } catch (sbErr) {
+      console.warn('Update via Supabase fallback to API:', sbErr);
+    }
+
+    // 2. Fallback via backend API
     try {
       const res = await api.put(`/admin/orders/${selectedOrder.id}/status`, {
         status: newStatus,
@@ -117,7 +174,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -258,7 +315,7 @@ export default function AdminOrdersPage() {
             )}
 
             <div className="space-y-5 text-xs">
-              
+
               {/* Customer & Address Details */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

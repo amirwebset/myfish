@@ -58,7 +58,7 @@ export const CartProvider = ({ children }) => {
     fetchCart();
   }, [fetchCart, user]);
 
-  const addToCart = async (productId, quantity = 1) => {
+  const addToCart = async (productId, quantity = 1, productObj = null) => {
     setLoading(true);
     try {
       const res = await api.post('/cart/add', {
@@ -76,8 +76,8 @@ export const CartProvider = ({ children }) => {
       console.warn('Backend cart API unavailable, saving to local cart:', err.message);
     }
 
-    // Local cart fallback
-    const foundProduct = MOCK_PRODUCTS.find(p => p.id === productId || p.slug === productId);
+    // Local cart fallback with productObj or MOCK_PRODUCTS lookup
+    const foundProduct = productObj || MOCK_PRODUCTS.find(p => p.id === productId || p.slug === productId);
     if (foundProduct) {
       setItems(prevItems => {
         const existing = prevItems.find(it => it.product_id === foundProduct.id);
@@ -98,14 +98,14 @@ export const CartProvider = ({ children }) => {
             id: Date.now(),
             product_id: foundProduct.id,
             name: foundProduct.name,
-            price: foundProduct.price,
-            formatted_price: foundProduct.formatted_price,
+            price: Number(foundProduct.price),
+            formatted_price: foundProduct.formatted_price || ('Rp ' + Number(foundProduct.price).toLocaleString('id-ID')),
             quantity,
-            subtotal: foundProduct.price * quantity,
-            formatted_subtotal: 'Rp ' + Number(foundProduct.price * quantity).toLocaleString('id-ID'),
+            subtotal: Number(foundProduct.price) * quantity,
+            formatted_subtotal: 'Rp ' + Number(Number(foundProduct.price) * quantity).toLocaleString('id-ID'),
             image_url: foundProduct.image_url,
             stock: foundProduct.stock,
-            is_in_stock: true,
+            is_in_stock: foundProduct.stock > 0,
             slug: foundProduct.slug,
           };
           updated = [...prevItems, newItem];
@@ -142,7 +142,12 @@ export const CartProvider = ({ children }) => {
     setItems(prevItems => {
       const updated = prevItems.map(it => {
         if (it.id === cartItemId || it.product_id === cartItemId) {
-          const newQ = quantity;
+          // Validasi ketat: Kuantitas tidak boleh melebihi stok yang tersedia
+          const maxStock = it.stock !== undefined && it.stock !== null ? it.stock : 999;
+          const newQ = Math.min(Math.max(1, quantity), maxStock);
+          if (quantity > maxStock) {
+            showToast(`Jumlah pesanan mencapai batas stok tersedia (${maxStock} ekor).`, 'warning');
+          }
           return {
             ...it,
             quantity: newQ,

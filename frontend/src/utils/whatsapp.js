@@ -43,44 +43,41 @@ Boleh minta kiriman video flaring / gerak aktif ikannya via WhatsApp? Terima kas
 }
 
 /**
- * Generate cart order message for quick checkout via WhatsApp
+ * Generate cart order message for checkout via WhatsApp (Standar UTS IKANKU)
  */
 export function generateCartOrderMessage(items, subtotal, shipping = null, packing = null, recipient = null) {
   const itemsText = items.map((it, idx) => {
     const itemPrice = it.formatted_subtotal || `Rp ${Number(it.price * it.quantity).toLocaleString('id-ID')}`;
-    return `${idx + 1}. *${it.name}* (${it.quantity} ekor) - ${itemPrice}`;
+    return `${idx + 1}. ${it.name} (${it.quantity} ekor) - ${itemPrice}`;
   }).join('\n');
 
-  let text = `Halo Pengelola IKANKU Pasanggar 👋
-Saya ingin melakukan pemesanan ikan hias dari website:
+  const grandTotal = subtotal + (shipping?.cost || 0) + (packing?.cost || 0);
 
-📋 *Daftar Ikan Dipesan:*
+  let text = `Halo Admin Desa Pasanggar, saya ingin memesan:
 ${itemsText}
 
-💰 *Subtotal Ikan:* Rp ${Number(subtotal).toLocaleString('id-ID')}`;
-
-  if (shipping) {
-    text += `\n🚚 *Kurir Ekspedisi:* ${shipping.name} (Rp ${Number(shipping.cost).toLocaleString('id-ID')})`;
-  }
-
-  if (packing) {
-    text += `\n📦 *Kemasan Khusus:* ${packing.name} ${packing.cost > 0 ? `(Rp ${Number(packing.cost).toLocaleString('id-ID')})` : '(Gratis Promo)'}`;
-  }
-
-  const grandTotal = subtotal + (shipping?.cost || 0) + (packing?.cost || 0);
-  text += `\n💳 *Perkiraan Total:* Rp ${Number(grandTotal).toLocaleString('id-ID')}`;
+Total: Rp ${Number(grandTotal).toLocaleString('id-ID')}`;
 
   if (recipient && (recipient.recipient_name || recipient.name)) {
-    text += `\n\n📍 *Data Penerima:*
-Nama: ${recipient.recipient_name || recipient.name}
-Telepon: ${recipient.phone || '-'}
-Alamat: ${recipient.address || '-'}`;
-    if (recipient.notes) {
-      text += `\nCatatan Tambahan: ${recipient.notes}`;
+    text += `\nAlamat: ${recipient.address || '-'}`;
+    if (recipient.phone) {
+      text += `\nNo. HP: ${recipient.phone}`;
     }
   }
 
-  text += `\n\nMohon dicek ketersediaan stok di kolam peternak Desa Pasanggar dan nomor rekening resmi untuk pembayaran. Terima kasih!`;
+  if (shipping) {
+    text += `\nMetode Pengiriman: ${shipping.name}`;
+  }
+
+  if (packing && packing.name) {
+    text += `\nKemasan: ${packing.name}`;
+  }
+
+  if (recipient?.notes) {
+    text += `\nCatatan: ${recipient.notes}`;
+  }
+
+  text += `\n\nMohon konfirmasi ketersediaan stok ikan dan nomor rekening untuk transfer. Terima kasih!`;
 
   return text;
 }

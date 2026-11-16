@@ -15,6 +15,7 @@ import {
   FileText
 } from 'lucide-react';
 import api from '../services/api';
+import { fetchOrderByCode } from '../services/supabase';
 
 export default function OrderDetailPage() {
   const { orderNumber } = useParams();
@@ -38,6 +39,26 @@ export default function OrderDetailPage() {
 
   const fetchOrder = async () => {
     try {
+      // 1. Coba ambil dari Supabase / Local storage
+      const dbOrder = await fetchOrderByCode(orderNumber);
+      if (dbOrder) {
+        const normalized = {
+          ...dbOrder,
+          order_number: dbOrder.order_code || dbOrder.order_number,
+          total_amount: dbOrder.total_price || dbOrder.total_amount,
+          status: dbOrder.order_status || dbOrder.status || 'menunggu_konfirmasi',
+          recipient_name: dbOrder.customer_name || dbOrder.recipient_name,
+          phone: dbOrder.whatsapp || dbOrder.phone,
+          items: dbOrder.order_items || dbOrder.items || [],
+        };
+        setOrder(normalized);
+        setAmount(normalized.total_amount);
+        document.title = `IKANKU | Pesanan #${normalized.order_number}`;
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback backend Laravel jika tersedia
       const res = await api.get(`/orders/${orderNumber}`);
       if (res.data.success) {
         setOrder(res.data.order);

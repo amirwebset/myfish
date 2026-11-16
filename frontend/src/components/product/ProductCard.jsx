@@ -15,7 +15,7 @@ export default function ProductCard({ product }) {
     if (product.stock <= 0 || isAdding) return;
 
     setIsAdding(true);
-    const res = await addToCart(product.id, 1);
+    const res = await addToCart(product.id, 1, product);
     setIsAdding(false);
 
     if (res.success) {

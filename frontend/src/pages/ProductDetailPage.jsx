@@ -20,6 +20,7 @@ import {
   Heart
 } from 'lucide-react';
 import api from '../services/api';
+import { fetchProductByIdentifier } from '../services/supabase';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/product/ProductCard';
 import { MOCK_PRODUCTS } from '../data/mockProducts';
@@ -41,6 +42,23 @@ export default function ProductDetailPage() {
     const fetchDetail = async () => {
       setLoading(true);
       setQuantity(1);
+
+      // 1. Ambil dari Supabase / Data Master
+      const prod = await fetchProductByIdentifier(identifier);
+      if (prod) {
+        setProduct(prod);
+        document.title = `IKANKU | ${prod.name}`;
+
+        const catName = typeof prod.category === 'object' ? prod.category?.name : prod.category;
+        const rel = MOCK_PRODUCTS.filter(
+          p => (p.category?.name === catName || p.category === catName || p.category_id === prod.category_id) && String(p.id) !== String(prod.id)
+        ).slice(0, 4);
+        setRelated(rel);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback backend API jika tersedia
       try {
         const res = await api.get(`/products/${identifier}`);
         if (res.data?.success && res.data.data) {
@@ -51,24 +69,10 @@ export default function ProductDetailPage() {
           return;
         }
       } catch (err) {
-        console.warn('Backend detail unavailable, matching local fish product:', err.message);
+        console.warn('Backend detail unavailable:', err.message);
       }
 
-      // Fallback matching from MOCK_PRODUCTS
-      const matched = MOCK_PRODUCTS.find(
-        p => p.slug === identifier || String(p.id) === String(identifier)
-      );
-
-      if (matched) {
-        setProduct(matched);
-        const rel = MOCK_PRODUCTS.filter(
-          p => p.category_id === matched.category_id && p.id !== matched.id
-        ).slice(0, 4);
-        setRelated(rel);
-        document.title = `IKANKU | ${matched.name}`;
-      } else {
-        setProduct(null);
-      }
+      setProduct(null);
       setLoading(false);
     };
 
@@ -91,7 +95,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     if (!product || product.stock <= 0 || isAdding) return;
     setIsAdding(true);
-    const res = await addToCart(product.id, quantity);
+    const res = await addToCart(product.id, quantity, product);
     setIsAdding(false);
     if (res.success) {
       setAddedSuccess(true);

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Filter, SlidersHorizontal, RotateCcw, Fish, ChevronDown } from 'lucide-react';
 import api from '../services/api';
+import { fetchProductsFromDb, fetchCategoriesFromDb } from '../services/supabase';
 import ProductCard from '../components/product/ProductCard';
 import Pagination from '../components/common/Pagination';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../data/mockProducts';
@@ -25,9 +26,9 @@ export default function CatalogPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get('/categories');
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          setCategories(res.data.data);
+        const cats = await fetchCategoriesFromDb();
+        if (Array.isArray(cats) && cats.length > 0) {
+          setCategories(cats);
           return;
         }
       } catch (err) {
@@ -56,78 +57,27 @@ export default function CatalogPage() {
       const page = parseInt(searchParams.get('page') || '1', 10);
 
       try {
-        const params = {
-          search: searchVal || undefined,
-          category: catVal || undefined,
+        const res = await fetchProductsFromDb({
+          search: searchVal,
+          category: catVal,
           sort: sortVal,
-          min_price: minP || undefined,
-          max_price: maxP || undefined,
+          tag: tagVal,
+          minPrice: minP,
+          maxPrice: maxP,
           page,
-          per_page: 24,
-        };
+          perPage: 24,
+        });
 
-        const res = await api.get('/products', { params });
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          setProducts(res.data.data);
-          setMeta(res.data.meta || { total: res.data.data.length, current_page: page, last_page: 1 });
+        if (res && res.products) {
+          setProducts(res.products);
+          setMeta(res.meta || { total: res.products.length, current_page: page, last_page: 1 });
           setLoading(false);
           return;
         }
       } catch (err) {
-        console.warn('Backend products unavailable, using diverse Pasanggar fish catalog:', err.message);
+        console.warn('Fetch products fallback:', err);
       }
 
-      // Fallback: Filter MOCK_PRODUCTS locally
-      let filtered = [...MOCK_PRODUCTS];
-
-      if (searchVal) {
-        filtered = filtered.filter(p =>
-          p.name.toLowerCase().includes(searchVal) ||
-          p.description.toLowerCase().includes(searchVal)
-        );
-      }
-
-      if (catVal) {
-        filtered = filtered.filter(p =>
-          p.category?.slug === catVal || String(p.category_id) === String(catVal)
-        );
-      }
-
-      if (tagVal === 'ready_stock') {
-        filtered = filtered.filter(p => p.stock > 0);
-      } else if (tagVal === 'pemula') {
-        filtered = filtered.filter(p => p.tags?.includes('pemula') || p.care_level?.includes('Mudah'));
-      } else if (tagVal === 'featured') {
-        filtered = filtered.filter(p => p.is_featured);
-      }
-
-      if (minP !== null && !isNaN(minP)) {
-        filtered = filtered.filter(p => p.price >= minP);
-      }
-
-      if (maxP !== null && !isNaN(maxP)) {
-        filtered = filtered.filter(p => p.price <= maxP);
-      }
-
-      // Sort
-      if (sortVal === 'price_asc') {
-        filtered.sort((a, b) => a.price - b.price);
-      } else if (sortVal === 'price_desc') {
-        filtered.sort((a, b) => b.price - a.price);
-      } else if (sortVal === 'name_asc') {
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-      } else {
-        // latest / default
-        filtered.sort((a, b) => b.id - a.id);
-      }
-
-      setProducts(filtered);
-      setMeta({
-        total: filtered.length,
-        current_page: page,
-        last_page: Math.ceil(filtered.length / 24) || 1,
-        per_page: 24,
-      });
       setLoading(false);
     };
 

@@ -18,6 +18,7 @@ import {
   Users
 } from 'lucide-react';
 import api from '../services/api';
+import { fetchProductsFromDb, fetchCategoriesFromDb } from '../services/supabase';
 import ProductCard from '../components/product/ProductCard';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../data/mockProducts';
 import { getWhatsAppUrl } from '../utils/whatsapp';
@@ -31,22 +32,24 @@ export default function HomePage() {
     document.title = 'IKANKU | Sentra Budidaya Ikan Hias Desa Pasanggar';
     const fetchData = async () => {
       try {
-        const [featRes, catRes] = await Promise.all([
-          api.get('/products/featured'),
-          api.get('/categories')
+        const [featRes, cats] = await Promise.all([
+          fetchProductsFromDb({ tag: 'featured', perPage: 8 }),
+          fetchCategoriesFromDb()
         ]);
-        if (featRes.data?.success && Array.isArray(featRes.data.data) && featRes.data.data.length > 0) {
-          setFeaturedProducts(featRes.data.data);
+
+        if (featRes?.products && featRes.products.length > 0) {
+          setFeaturedProducts(featRes.products);
         } else {
           setFeaturedProducts(MOCK_PRODUCTS.filter(p => p.is_featured));
         }
-        if (catRes.data?.success && Array.isArray(catRes.data.data) && catRes.data.data.length > 0) {
-          setCategories(catRes.data.data);
+
+        if (Array.isArray(cats) && cats.length > 0) {
+          setCategories(cats);
         } else {
           setCategories(MOCK_CATEGORIES);
         }
       } catch (err) {
-        console.warn('Backend unavailable, using Pasanggar featured catalog:', err.message);
+        console.warn('Data load fallback, using Pasanggar featured catalog:', err.message);
         setFeaturedProducts(MOCK_PRODUCTS.filter(p => p.is_featured));
         setCategories(MOCK_CATEGORIES);
       } finally {
@@ -129,7 +132,7 @@ export default function HomePage() {
               <div className="relative mx-auto max-w-md rounded-3xl overflow-hidden shadow-2xl border border-white/20 bg-slate-800/60 backdrop-blur-md p-3 group">
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900 relative">
                   <img
-                    src="https://images.unsplash.com/photo-1520302630591-fd1c66edc19d?auto=format&fit=crop&w=800&q=80"
+                    src="https://images.unsplash.com/photo-1570002331992-2061565c3556?auto=format&fit=crop&w=800&q=80"
                     alt="Ikan Koi Pasanggar"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     onError={(e) => {
@@ -430,7 +433,7 @@ export default function HomePage() {
 
             <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl aspect-[16/10] bg-slate-800">
               <img
-                src="https://images.unsplash.com/photo-1544943910-4c1dc44a046c?auto=format&fit=crop&w=1000&q=80"
+                src="https://images.unsplash.com/photo-1509587961360-de7aff9a662a?auto=format&fit=crop&w=1000&q=80"
                 alt="Budidaya Ikan Hias"
                 className="w-full h-full object-cover"
                 onError={(e) => {
