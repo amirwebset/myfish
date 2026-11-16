@@ -101,21 +101,38 @@ export async function fetchProductsFromDb({
 
     if (error) throw error;
 
-    if (Array.isArray(data) && data.length > 0) {
-      const formatted = data.map(formatProduct);
-      return {
-        products: formatted,
-        meta: {
-          total: count || formatted.length,
-          current_page: page,
-          last_page: Math.ceil((count || formatted.length) / perPage) || 1,
-          per_page: perPage,
-        },
-        source: 'supabase',
-      };
+    if (Array.isArray(data)) {
+      if (data.length > 0) {
+        const formatted = data.map(formatProduct);
+        return {
+          products: formatted,
+          meta: {
+            total: count || formatted.length,
+            current_page: page,
+            last_page: Math.ceil((count || formatted.length) / perPage) || 1,
+            per_page: perPage,
+          },
+          source: 'supabase',
+        };
+      }
+
+      // Jika ada filter pencarian/kategori dan hasilnya 0 ikan
+      const hasFilter = Boolean(search.trim() || category || tag || minPrice !== null || maxPrice !== null);
+      if (hasFilter) {
+        return {
+          products: [],
+          meta: {
+            total: 0,
+            current_page: page,
+            last_page: 1,
+            per_page: perPage,
+          },
+          source: 'supabase',
+        };
+      }
     }
 
-    // Jika tabel kosong di cloud, gunakan mock Pasanggar
+    // Jika tabel benar-benar kosong di cloud (belum diseed), gunakan katalog mock Pasanggar
     return filterMockProducts({ search, category, sort, tag, minPrice, maxPrice, page, perPage });
   } catch (err) {
     console.warn('Gagal memuat produk dari Supabase, beralih ke katalog lokal:', err.message);
@@ -350,6 +367,219 @@ export async function fetchOrderByCode(orderCode) {
 // ==============================================================================
 // 3. SERVICE: DASHBOARD ADMIN IKANKU (PENGELOLA DESA PASANGGAR)
 // ==============================================================================
+
+/**
+ * Mengambil semua produk ikan untuk halaman Admin (baik aktif maupun nonaktif)
+ */
+export async function adminFetchProducts({ search = '', category = '' } = {}) {
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      let query = supabase.from('products').select('*', { count: 'exact' });
+      if (search.trim()) {
+        query = query.or(`name.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`);
+      }
+      if (category) {
+        query = query.ilike('category', `%${category}%`);
+      }
+      query = query.order('created_at', { ascending: false });
+
+      const { data, count, error } = await query;
+      if (error) throw error;
+
+      if (Array.isArray(data)) {
+        const formatted = data.map(formatProduct);
+        return {
+          products: formatted,
+          total: count ?? formatted.length,
+          source: 'supabase',
+        };
+      }
+    } catch (err) {
+      console.warn('Gagal memuat produk admin dari Supabase:', err.message);
+    }
+  }
+
+  // Fallback Local Storage / Mock
+  let stored = localStorage.getItem('ikanku_admin_products');
+  let list = stored ? JSON.parse(stored) : [...MOCK_PRODUCTS];
+
+  if (search.trim()) {
+    const s = search.toLowerCase().trim();
+    list = list.filter(p => p.name.toLowerCase().includes(s) || (p.description || '').toLowerCase().includes(s));
+  }
+  if (category) {
+    list = list.filter(p =>
+      String(p.category_id) === String(category) ||
+      p.category?.slug === category ||
+      p.category?.name?.toLowerCase().includes(category.toLowerCase()) ||
+      String(p.category).toLowerCase().includes(category.toLowerCase())
+    );
+  }
+
+  return {
+    products: list.map(formatProduct),
+    total: list.length,
+    source: isSupabaseConfigured() ? 'supabase_fallback' : 'local',
+  };
+}
+
+/**
+ * Menyimpan atau memperbarui produk ikan di Supabase Cloud Database
+ */
+export async function adminSaveProduct(formData, isEditing = false, editId = null) {
+  const priceNum = parseFloat(formData.price) || 0;
+  const stockNum = parseInt(formData.stock, 10) || 0;
+  const categoryName = typeof formData.category === 'object' ? (formData.category?.name || 'Ikan Hias') : (formData.category || 'Ikan Hias');
+  const imgUrl = formData.image_url || 'https://images.unsplash.com/photo-1544943910-4c1dc44a046c?auto=format&fit=crop&w=800&q=80';
+
+  if (isSupabaseConfigured() && supabase) {
+    const payload = {
+      name: formData.name,
+      category: categoryName,
+      price: priceNum,
+      stock: stockNum,
+      description: formData.description || '',
+      image_url: imgUrl,
+      is_featured: Boolean(formData.is_featured),
+      is_active: Boolean(formData.is_active),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (isEditing && editId) {
+      const { data, error } = await supabase
+        .from('products')
+        .update(payload)
+        .eq('id', editId)
+        .select()
+        .single();
+
+      if (error) throw new Error(`Supabase Error (${error.code}): ${error.message}`);
+      syncLocalAdminProducts(data, true, editId);
+      return { success: true, product: formatProduct(data), source: 'supabase' };
+    } else {
+      payload.slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
+      payload.breeder = 'Kelompok Peternak Desa Pasanggar';
+      const { data, error } = await supabase
+        .from('products')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) throw new Error(`Supabase Error (${error.code}): ${error.message}`);
+      syncLocalAdminProducts(data, false, data.id);
+      return { success: true, product: formatProduct(data), source: 'supabase' };
+    }
+  }
+
+  // Fallback Local Storage jika Supabase belum terpasang
+  let stored = localStorage.getItem('ikanku_admin_products');
+  let list = stored ? JSON.parse(stored) : [...MOCK_PRODUCTS];
+
+  if (isEditing && editId) {
+    list = list.map(p => {
+      if (String(p.id) === String(editId)) {
+        return {
+          ...p,
+          name: formData.name,
+          category: { id: formData.category_id || 1, name: categoryName },
+          price: priceNum,
+          formatted_price: 'Rp ' + priceNum.toLocaleString('id-ID'),
+          stock: stockNum,
+          description: formData.description || '',
+          image_url: imgUrl,
+          is_featured: Boolean(formData.is_featured),
+          is_active: Boolean(formData.is_active),
+        };
+      }
+      return p;
+    });
+    localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
+    return { success: true, source: 'local' };
+  } else {
+    const newProduct = {
+      id: 'local_fish_' + Date.now(),
+      name: formData.name,
+      slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000),
+      category: { id: formData.category_id || 1, name: categoryName },
+      price: priceNum,
+      formatted_price: 'Rp ' + priceNum.toLocaleString('id-ID'),
+      stock: stockNum,
+      description: formData.description || '',
+      image_url: imgUrl,
+      breeder: 'Kelompok Peternak Desa Pasanggar',
+      is_featured: Boolean(formData.is_featured),
+      is_active: Boolean(formData.is_active),
+    };
+    list.unshift(newProduct);
+    localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
+    return { success: true, product: newProduct, source: 'local' };
+  }
+}
+
+/**
+ * Menghapus produk ikan dari database Supabase
+ */
+export async function adminDeleteProduct(productId) {
+  if (isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) throw new Error(`Supabase Error (${error.code}): ${error.message}`);
+  }
+
+  // Bersihkan juga dari cache local storage
+  let stored = localStorage.getItem('ikanku_admin_products');
+  if (stored) {
+    let list = JSON.parse(stored).filter(p => String(p.id) !== String(productId));
+    localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
+  }
+
+  return { success: true };
+}
+
+/**
+ * Memasukkan 12 data ikan hias awal Desa Pasanggar ke Supabase (Initial Seeding)
+ */
+export async function adminSeedInitialProducts() {
+  if (!isSupabaseConfigured() || !supabase) {
+    throw new Error('Supabase belum dikonfigurasi. Harap isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY di file .env terlebih dahulu.');
+  }
+
+  const rows = MOCK_PRODUCTS.map(p => ({
+    name: p.name,
+    slug: (p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '-' + Math.floor(100 + Math.random() * 900),
+    category: p.category?.name || p.category || 'Ikan Hias',
+    description: p.description || '',
+    price: p.price || 0,
+    stock: p.stock || 0,
+    image_url: p.image_url || '',
+    breeder: p.breeder || 'Kelompok Peternak Desa Pasanggar',
+    size: p.size || '',
+    age: p.age || '',
+    gender: p.gender || '',
+    care_level: p.care_level || 'Mudah (Pemula)',
+    feed: p.feed || '',
+    water_param: p.water_param || '',
+    is_featured: Boolean(p.is_featured),
+    is_active: p.is_active !== false,
+  }));
+
+  const { data, error } = await supabase.from('products').insert(rows).select();
+  if (error) throw new Error(`Gagal memasukkan data ke Supabase: ${error.message}`);
+
+  return { success: true, count: data.length };
+}
+
+function syncLocalAdminProducts(savedItem, isEditing, editId) {
+  try {
+    let stored = localStorage.getItem('ikanku_admin_products');
+    let list = stored ? JSON.parse(stored) : [...MOCK_PRODUCTS];
+    if (isEditing) {
+      list = list.map(p => String(p.id) === String(editId) ? { ...p, ...savedItem } : p);
+    } else {
+      list.unshift(savedItem);
+    }
+    localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
+  } catch (e) {}
+}
 
 export async function adminFetchOrders() {
   if (!isSupabaseConfigured() || !supabase) {

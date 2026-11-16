@@ -95,36 +95,50 @@ DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
 
--- POLICIES: PRODUCTS (Publik boleh baca, hanya admin boleh ubah)
+-- POLICIES: PRODUCTS (Publik boleh melihat, frontend/admin dapat CRUD)
 DROP POLICY IF EXISTS "Public can read active products" ON public.products;
-CREATE POLICY "Public can read active products" ON public.products
-    FOR SELECT USING (is_active = TRUE OR auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
-
 DROP POLICY IF EXISTS "Admin full access products" ON public.products;
-CREATE POLICY "Admin full access products" ON public.products
-    FOR ALL USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
+DROP POLICY IF EXISTS "Allow public read products" ON public.products;
+DROP POLICY IF EXISTS "Allow anon manage products" ON public.products;
 
--- POLICIES: ORDERS (Siapapun boleh buat pesanan, pembeli/admin boleh lihat)
+CREATE POLICY "Allow public read products" ON public.products
+    FOR SELECT USING (TRUE);
+
+CREATE POLICY "Allow anon manage products" ON public.products
+    FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
+-- POLICIES: ORDERS (Siapapun boleh buat pesanan, pembeli & admin dapat membaca & update status)
 DROP POLICY IF EXISTS "Anyone can insert orders" ON public.orders;
-CREATE POLICY "Anyone can insert orders" ON public.orders
+DROP POLICY IF EXISTS "Users and admin can read orders" ON public.orders;
+DROP POLICY IF EXISTS "Admin can update orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow insert orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow read orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow update orders" ON public.orders;
+
+CREATE POLICY "Allow insert orders" ON public.orders
     FOR INSERT WITH CHECK (TRUE);
 
-DROP POLICY IF EXISTS "Users and admin can read orders" ON public.orders;
-CREATE POLICY "Users and admin can read orders" ON public.orders
-    FOR SELECT USING (TRUE); -- Diakses via kode unik pesanan / user_id
+CREATE POLICY "Allow read orders" ON public.orders
+    FOR SELECT USING (TRUE);
 
-DROP POLICY IF EXISTS "Admin can update orders" ON public.orders;
-CREATE POLICY "Admin can update orders" ON public.orders
-    FOR UPDATE USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
+CREATE POLICY "Allow update orders" ON public.orders
+    FOR UPDATE USING (TRUE) WITH CHECK (TRUE);
 
 -- POLICIES: ORDER_ITEMS
 DROP POLICY IF EXISTS "Anyone can insert order items" ON public.order_items;
-CREATE POLICY "Anyone can insert order items" ON public.order_items
+DROP POLICY IF EXISTS "Order items readable" ON public.order_items;
+DROP POLICY IF EXISTS "Allow insert order items" ON public.order_items;
+DROP POLICY IF EXISTS "Allow read order items" ON public.order_items;
+DROP POLICY IF EXISTS "Allow manage order items" ON public.order_items;
+
+CREATE POLICY "Allow insert order items" ON public.order_items
     FOR INSERT WITH CHECK (TRUE);
 
-DROP POLICY IF EXISTS "Order items readable" ON public.order_items;
-CREATE POLICY "Order items readable" ON public.order_items
+CREATE POLICY "Allow read order items" ON public.order_items
     FOR SELECT USING (TRUE);
+
+CREATE POLICY "Allow manage order items" ON public.order_items
+    FOR ALL USING (TRUE) WITH CHECK (TRUE);
 
 -- ==============================================================================
 -- 7. FUNCTION: ATUR PENGURANGAN STOK OTOMATIS (MENCEGAH STOK MINUS)
