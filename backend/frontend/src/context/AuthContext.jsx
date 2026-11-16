@@ -15,18 +15,27 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       if (token) {
+        // Sesi demo admin/pelanggan dipertahankan tanpa perlu memanggil backend lokal
+        if (token.startsWith('demo_')) {
+          setLoading(false);
+          return;
+        }
+
         try {
           const res = await api.get('/me');
-          if (res.data.success) {
+          if (res.data?.success) {
             setUser(res.data.user);
             localStorage.setItem('ikanku_user', JSON.stringify(res.data.user));
           }
         } catch (err) {
-          console.warn('Session expired or invalid token:', err.message);
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('ikanku_token');
-          localStorage.removeItem('ikanku_user');
+          console.warn('Session check fallback:', err.message);
+          // Hanya bersihkan jika bukan user demo
+          if (!token.startsWith('demo_')) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('ikanku_token');
+            localStorage.removeItem('ikanku_user');
+          }
         }
       }
       setLoading(false);
@@ -36,8 +45,54 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+
+    // 1. Prioritas Utama: Akun Demo Administrator Desa Pasanggar
+    if (
+      (cleanEmail === 'admin@pasanggarfish.com' && cleanPass === 'admin123') ||
+      (cleanEmail === 'admin' && (cleanPass === 'admin123' || cleanPass === 'admin')) ||
+      (cleanEmail === 'admin@ikanku.com' && cleanPass === 'admin123')
+    ) {
+      const demoAdmin = {
+        id: 'admin_pasanggar_1',
+        name: 'Administrator Desa Pasanggar',
+        email: 'admin@pasanggarfish.com',
+        role: 'admin',
+        phone: '081249412813',
+      };
+      const fakeToken = 'demo_admin_' + Date.now();
+      setUser(demoAdmin);
+      setToken(fakeToken);
+      localStorage.setItem('ikanku_token', fakeToken);
+      localStorage.setItem('ikanku_user', JSON.stringify(demoAdmin));
+      return { success: true, user: demoAdmin };
+    }
+
+    // 2. Akun Demo Pelanggan (Customer)
+    if (
+      (cleanEmail === 'pelanggan@gmail.com' && cleanPass === 'password123') ||
+      (cleanEmail === 'pelanggan' && cleanPass === 'password123')
+    ) {
+      const demoCustomer = {
+        id: 'customer_demo_1',
+        name: 'Budi Santoso (Demo)',
+        email: 'pelanggan@gmail.com',
+        role: 'customer',
+        phone: '081234567890',
+        address: 'Jl. Raya Pasanggar No. 12, Pamekasan',
+      };
+      const fakeToken = 'demo_customer_' + Date.now();
+      setUser(demoCustomer);
+      setToken(fakeToken);
+      localStorage.setItem('ikanku_token', fakeToken);
+      localStorage.setItem('ikanku_user', JSON.stringify(demoCustomer));
+      return { success: true, user: demoCustomer };
+    }
+
+    // 3. Coba autentikasi ke backend API lokal jika tersedia
     try {
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/login', { email: cleanEmail, password: cleanPass });
       if (res.data?.success) {
         setUser(res.data.user);
         setToken(res.data.token);
@@ -46,46 +101,12 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: res.data.user };
       }
     } catch (err) {
-      console.warn('Backend login API offline, memeriksa akun demo:', err.message);
-    }
-
-    // Demo / Standalone fallback untuk presentasi UTS & Vercel
-    if (email === 'admin@pasanggarfish.com' && password === 'admin123') {
-      const demoAdmin = {
-        id: 'admin_pasanggar_1',
-        name: 'Administrator Desa Pasanggar',
-        email: 'admin@pasanggarfish.com',
-        role: 'admin',
-        phone: '081249412813',
-      };
-      setUser(demoAdmin);
-      const fakeToken = 'demo_admin_token_' + Date.now();
-      setToken(fakeToken);
-      localStorage.setItem('ikanku_token', fakeToken);
-      localStorage.setItem('ikanku_user', JSON.stringify(demoAdmin));
-      return { success: true, user: demoAdmin };
-    }
-
-    if (email === 'pelanggan@gmail.com' && password === 'password123') {
-      const demoCustomer = {
-        id: 'customer_demo_1',
-        name: 'Budi Santoso (Demo)',
-        email: 'pelanggan@gmail.com',
-        role: 'customer',
-        phone: '081234567890',
-        address: 'Jl. Raya Pasanggar No. 12',
-      };
-      setUser(demoCustomer);
-      const fakeToken = 'demo_customer_token_' + Date.now();
-      setToken(fakeToken);
-      localStorage.setItem('ikanku_token', fakeToken);
-      localStorage.setItem('ikanku_user', JSON.stringify(demoCustomer));
-      return { success: true, user: demoCustomer };
+      console.warn('Backend login API offline:', err.message);
     }
 
     return { 
       success: false, 
-      message: 'Email atau kata sandi tidak cocok. Silakan gunakan tombol Akses Cepat Demo di bawah.' 
+      message: 'Email atau kata sandi tidak cocok. Gunakan admin@pasanggarfish.com dan password admin123, atau klik tombol Akses Cepat Demo di bawah.' 
     };
   };
 

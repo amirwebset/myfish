@@ -27,8 +27,8 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res.success) {
-      if (res.user.role === 'admin' && redirect === '/') {
-        navigate('/admin');
+      if (res.user.role === 'admin') {
+        navigate(redirect === '/' ? '/admin/produk' : redirect);
       } else {
         navigate(redirect);
       }
@@ -37,9 +37,24 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (demoEmail, demoPass) => {
+  const handleQuickLogin = async (demoEmail, demoPass) => {
     setEmail(demoEmail);
     setPassword(demoPass);
+    setError('');
+    setLoading(true);
+
+    const res = await login(demoEmail, demoPass);
+    setLoading(false);
+
+    if (res.success) {
+      if (res.user.role === 'admin') {
+        navigate('/admin/produk');
+      } else {
+        navigate(redirect === '/' ? '/' : redirect);
+      }
+    } else {
+      setError(res.message);
+    }
   };
 
   return (
