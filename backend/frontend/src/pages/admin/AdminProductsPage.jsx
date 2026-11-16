@@ -16,7 +16,14 @@ import {
 import api from '../../services/api';
 import Pagination from '../../components/common/Pagination';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../data/mockProducts';
-import { isSupabaseConfigured, supabase } from '../../services/supabase';
+import { 
+  isSupabaseConfigured, 
+  supabase,
+  adminFetchProducts,
+  adminSaveProduct,
+  adminDeleteProduct,
+  adminSeedInitialProducts
+} from '../../services/supabase';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -64,80 +71,21 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async (targetPage = page) => {
     setLoading(true);
+    setActionError('');
 
-    // 1. Coba ambil dari backend API Laravel jika aktif lokal
     try {
-      const params = { page: targetPage };
-      if (search) params.search = search;
-      if (categoryFilter) params.category_id = categoryFilter;
-
-      const res = await api.get('/admin/products', { params });
-      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-        setProducts(res.data.data);
-        if (res.data.meta) {
-          setMeta(res.data.meta);
-        }
+      const res = await adminFetchProducts({ search, category: categoryFilter });
+      if (res && Array.isArray(res.products)) {
+        setProducts(res.products);
+        setMeta({ current_page: 1, last_page: 1, total: res.total || res.products.length });
         setLoading(false);
         return;
       }
     } catch (err) {
-      // Backend unavailable, lanjutkan ke Supabase / local
+      console.warn('Gagal memuat produk admin:', err.message);
+      setActionError('Gagal memuat daftar produk: ' + err.message);
     }
 
-    // 2. Coba ambil dari Supabase Cloud Database jika terhubung
-    if (isSupabaseConfigured() && supabase) {
-      try {
-        let q = supabase.from('products').select('*', { count: 'exact' });
-        if (search.trim()) q = q.or(`name.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`);
-        if (categoryFilter) q = q.ilike('category', `%${categoryFilter}%`);
-        const { data, count, error } = await q.order('created_at', { ascending: false });
-
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const formatted = data.map(p => ({
-            ...p,
-            formatted_price: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p.price),
-            category: typeof p.category === 'object' ? p.category : { id: p.category, name: p.category },
-          }));
-          setProducts(formatted);
-          setMeta({ current_page: 1, last_page: 1, total: count || formatted.length });
-          setLoading(false);
-          return;
-        }
-      } catch (sbErr) {
-        console.warn('Supabase fetch products fallback:', sbErr);
-      }
-    }
-
-    // 3. Fallback cerdas: Baca dari LocalStorage ('ikanku_admin_products') atau MOCK_PRODUCTS
-    let stored = localStorage.getItem('ikanku_admin_products');
-    let list = stored ? JSON.parse(stored) : [...MOCK_PRODUCTS];
-    if (stored) {
-      list = list.map(item => {
-        const mock = MOCK_PRODUCTS.find(m => m.id === item.id);
-        if (mock && !item.is_user_created) {
-          return { ...item, image_url: mock.image_url };
-        }
-        return item;
-      });
-      localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
-    } else {
-      localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
-    }
-
-    if (search.trim()) {
-      const s = search.toLowerCase().trim();
-      list = list.filter(p => p.name.toLowerCase().includes(s) || (p.description || '').toLowerCase().includes(s));
-    }
-    if (categoryFilter) {
-      list = list.filter(p => 
-        String(p.category_id) === String(categoryFilter) || 
-        p.category?.slug === categoryFilter ||
-        p.category?.name?.toLowerCase().includes(categoryFilter.toLowerCase())
-      );
-    }
-
-    setProducts(list);
-    setMeta({ current_page: 1, last_page: 1, total: list.length });
     setLoading(false);
   };
 
@@ -199,138 +147,79 @@ export default function AdminProductsPage() {
     }
   };
 
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedData = async () => {
+    if (!confirm('Muat 12 data ikan hias asli Desa Pasanggar ke database Supabase sekarang?')) return;
+    setSeeding(true);
+    setActionError('');
+    try {
+      const res = await adminSeedInitialProducts();
+      setActionSuccess(`Berhasil memasukkan ${res.count} produk ikan hias Pasanggar ke database Supabase!`);
+      await fetchProducts();
+      setTimeout(() => setActionSuccess(''), 5000);
+    } catch (err) {
+      console.error('Seed error:', err);
+      setActionError(err.message || 'Gagal memasukkan data awal ke Supabase');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionError('');
     setSubmitting(true);
 
-    const priceNum = parseFloat(formData.price) || 0;
-    const stockNum = parseInt(formData.stock, 10) || 0;
     const catObj = categories.find(c => String(c.id) === String(formData.category_id)) || categories[0] || { id: 1, name: 'Ikan Cupang' };
     const imgUrl = imagePreview || formData.image_url || 'https://images.unsplash.com/photo-1544943910-4c1dc44a046c?auto=format&fit=crop&w=800&q=80';
 
-    // 1. Simpan ke Supabase jika terhubung
-    if (isSupabaseConfigured() && supabase) {
-      try {
-        const payload = {
+    try {
+      await adminSaveProduct(
+        {
           name: formData.name,
           category: catObj.name,
-          price: priceNum,
-          stock: stockNum,
+          category_id: catObj.id,
+          price: formData.price,
+          stock: formData.stock,
           description: formData.description,
           image_url: imgUrl,
           is_featured: formData.is_featured,
           is_active: formData.is_active,
-        };
+        },
+        Boolean(editingProduct),
+        editingProduct?.id
+      );
 
-        if (editingProduct) {
-          await supabase.from('products').update(payload).eq('id', editingProduct.id);
-        } else {
-          payload.slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
-          await supabase.from('products').insert(payload);
-        }
-      } catch (sbErr) {
-        console.warn('Supabase product sync warning:', sbErr.message);
-      }
+      setActionSuccess(
+        editingProduct
+          ? `Data produk '${formData.name}' berhasil diperbarui di database!`
+          : `Produk baru '${formData.name}' berhasil disimpan ke database!`
+      );
+
+      setIsModalOpen(false);
+      await fetchProducts();
+      setTimeout(() => setActionSuccess(''), 4000);
+    } catch (err) {
+      console.error('Submit product error:', err);
+      setActionError(err.message || 'Gagal menyimpan produk ke database.');
+    } finally {
+      setSubmitting(false);
     }
-
-    // 2. Simpan ke Local Storage ('ikanku_admin_products') agar CRUD 100% jalan di Vercel demo
-    let stored = localStorage.getItem('ikanku_admin_products');
-    let list = stored ? JSON.parse(stored) : [...MOCK_PRODUCTS];
-
-    if (editingProduct) {
-      list = list.map(p => {
-        if (p.id === editingProduct.id) {
-          return {
-            ...p,
-            name: formData.name,
-            category_id: catObj.id,
-            category: catObj,
-            price: priceNum,
-            formatted_price: 'Rp ' + priceNum.toLocaleString('id-ID'),
-            stock: stockNum,
-            description: formData.description,
-            image_url: imgUrl,
-            is_featured: formData.is_featured,
-            is_active: formData.is_active,
-          };
-        }
-        return p;
-      });
-      setActionSuccess('Data produk ikan berhasil diperbarui!');
-    } else {
-      const newProduct = {
-        id: 'fish_' + Date.now(),
-        name: formData.name,
-        slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000),
-        category_id: catObj.id,
-        category: catObj,
-        price: priceNum,
-        formatted_price: 'Rp ' + priceNum.toLocaleString('id-ID'),
-        stock: stockNum,
-        description: formData.description,
-        image_url: imgUrl,
-        breeder: 'Kelompok Peternak Desa Pasanggar',
-        is_featured: formData.is_featured,
-        is_active: formData.is_active,
-      };
-      list.unshift(newProduct);
-      setActionSuccess('Produk ikan baru berhasil ditambahkan ke katalog!');
-    }
-
-    localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
-
-    // 3. Coba kirim ke API backend jika tersedia
-    try {
-      const data = new FormData();
-      data.append('name', formData.name);
-      data.append('category_id', formData.category_id);
-      data.append('price', formData.price);
-      data.append('stock', formData.stock);
-      data.append('description', formData.description);
-      data.append('is_featured', formData.is_featured ? '1' : '0');
-      data.append('is_active', formData.is_active ? '1' : '0');
-      if (imageFile) data.append('image', imageFile);
-
-      if (editingProduct) {
-        await api.post(`/admin/products/${editingProduct.id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
-      } else {
-        await api.post('/admin/products', data, { headers: { 'Content-Type': 'multipart/form-data' } });
-      }
-    } catch (apiErr) {
-      // Ignored if backend offline
-    }
-
-    setIsModalOpen(false);
-    setSubmitting(false);
-    await fetchProducts();
-    setTimeout(() => setActionSuccess(''), 4000);
   };
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Hapus produk ikan '${name}' dari sistem katalog?`)) return;
 
-    // 1. Coba hapus di Supabase
-    if (isSupabaseConfigured() && supabase) {
-      try {
-        await supabase.from('products').delete().eq('id', id);
-      } catch (e) {}
-    }
-
-    // 2. Hapus dari Local Storage
-    let stored = localStorage.getItem('ikanku_admin_products');
-    let list = stored ? JSON.parse(stored) : [...MOCK_PRODUCTS];
-    list = list.filter(p => p.id !== id);
-    localStorage.setItem('ikanku_admin_products', JSON.stringify(list));
-
-    // 3. Coba hapus di backend API
     try {
-      await api.delete(`/admin/products/${id}`);
-    } catch (e) {}
-
-    setActionSuccess(`Produk '${name}' berhasil dihapus.`);
-    await fetchProducts();
-    setTimeout(() => setActionSuccess(''), 4000);
+      await adminDeleteProduct(id);
+      setActionSuccess(`Produk '${name}' berhasil dihapus dari database.`);
+      await fetchProducts();
+      setTimeout(() => setActionSuccess(''), 4000);
+    } catch (err) {
+      console.error('Delete product error:', err);
+      alert('Gagal menghapus produk: ' + err.message);
+    }
   };
 
   return (
@@ -356,10 +245,69 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
+      {/* Supabase Cloud Connection Status Banner */}
+      {isSupabaseConfigured() ? (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/90 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="flex h-3 w-3 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div>
+              <p className="font-extrabold text-emerald-950">
+                Terhubung ke Database Cloud Supabase
+              </p>
+              <p className="text-[11px] text-emerald-700">
+                Data produk tersimpan permanen di cloud dan otomatis sinkron secara realtime saat diakses dari HP pembeli.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              onClick={handleSeedData}
+              disabled={seeding}
+              className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+              title="Upload 12 katalog ikan awal Desa Pasanggar ke tabel Supabase"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              {seeding ? 'Memproses...' : 'Sinkron 12 Ikan Awal'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row items-start justify-between gap-3 shadow-xs">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-extrabold text-amber-950">
+                Supabase Belum Dikonfigurasi (Mode Offline / LocalStorage)
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
+                Produk yang Anda tambah atau edit saat ini <strong>hanya tersimpan di browser laptop ini</strong> dan tidak akan muncul di HP lain.
+                Untuk mengaktifkan sinkronisasi database cloud antar-perangkat, masukkan <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[10px]">VITE_SUPABASE_URL</code> dan <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[10px]">VITE_SUPABASE_ANON_KEY</code> di file <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[10px]">frontend/.env</code> dan di menu Environment Variables Vercel.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {actionSuccess && (
         <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{actionSuccess}</span>
+        </div>
+      )}
+
+      {actionError && !isModalOpen && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+          <button onClick={() => setActionError('')} className="text-rose-500 hover:text-rose-700">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
